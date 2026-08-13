@@ -179,7 +179,7 @@
       mount.innerHTML =
         '<div class="gate">' +
           '<div class="gate-card">' +
-            '<div class="gate-brand"><span class="brand-mark">N1</span><b>N1 Forex Academy</b></div>' +
+            (window.BRAND ? '<div class="gate-brand">' + BRAND.lockup(48) + '</div>' : '') +
             '<h1>Sign in</h1>' +
             '<p class="gate-sub">' + roster.cohort + '</p>' +
             '<form id="gForm">' +
@@ -276,7 +276,7 @@
 
       if (!info.valid) {
         mount.innerHTML = '<div class="gate"><div class="gate-card">' +
-          '<div class="gate-brand"><span class="brand-mark">N1</span><b>N1 Forex Academy</b></div>' +
+          (window.BRAND ? '<div class="gate-brand">' + BRAND.lockup(48) + '</div>' : '') +
           '<h1>Invite not valid</h1><p class="gate-sub">' + esc(info.reason || 'This link cannot be used.') + '</p>' +
           '<p class="gate-note">Invite links expire and can only be used a limited number of times. ' +
           'Ask your instructor for a fresh one.</p>' +
@@ -287,7 +287,7 @@
 
       mount.innerHTML =
         '<div class="gate"><div class="gate-card">' +
-          '<div class="gate-brand"><span class="brand-mark">N1</span><b>N1 Forex Academy</b></div>' +
+          (window.BRAND ? '<div class="gate-brand">' + BRAND.lockup(48) + '</div>' : '') +
           '<h1>Create your account</h1>' +
           '<p class="gate-sub">' + esc(info.label) + '</p>' +
           '<form id="jForm">' +
