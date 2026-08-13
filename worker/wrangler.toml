@@ -9,6 +9,12 @@ name = "n1-academy-api"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
 
+# Serve on the workers.dev subdomain, but do NOT publish per-version preview URLs.
+# Preview URLs would leave older builds of an authentication API permanently
+# reachable, so a fixed bug would still be live at its old address.
+workers_dev = true
+preview_urls = false
+
 [vars]
 ALLOWED_ORIGINS = "https://n1forexacademy.github.io,http://localhost:8777"
 
@@ -17,7 +23,7 @@ ALLOWED_ORIGINS = "https://n1forexacademy.github.io,http://localhost:8777"
 [[d1_databases]]
 binding = "DB"
 database_name = "n1-academy"
-database_id = "PASTE_DATABASE_ID_HERE"
+database_id = "363366ad-f9ca-4011-b892-292a456a858e"
 
 # ADMIN_KEY is a secret, not a var. Set it with:
 #   npx wrangler secret put ADMIN_KEY

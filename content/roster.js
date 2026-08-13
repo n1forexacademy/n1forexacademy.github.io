@@ -34,7 +34,7 @@
    Setup steps are in ARCHITECTURE.md §7. The `seats` below are ignored in
    server mode — students live in the database instead.
    --------------------------------------------------------------------------- */
-window.API_BASE = '';
+window.API_BASE = 'https://n1-academy-api.n1forexacademy.workers.dev';
 
 window.ROSTER = {
   cohort: 'N1 Forex Academy — Cohort 1',
