@@ -578,6 +578,18 @@
     if (!s) return;
     document.getElementById('topbar').hidden = false;
     document.getElementById('sitefooter').hidden = false;
+
+    // Swap the placeholder badge for the real mark, and give instructors
+    // navigation that matches their job rather than the student's.
+    var badge = document.querySelector('.brand .brand-mark');
+    if (badge && window.BRAND) badge.outerHTML = BRAND.mark(32);
+    var nav = document.querySelector('.topnav');
+    if (nav) {
+      nav.innerHTML = Auth.isInstructor()
+        ? '<a href="#/">Dashboard</a><a href="#/instructor">Admin</a><a href="#/library">Library</a>' +
+          '<a href="#/drills">Trading Floor</a><a href="#/toolkit">Toolkit</a><a href="#/glossary">Glossary</a>'
+        : '<a href="#/">My path</a><a href="#/drills">Trading Floor</a><a href="#/glossary">Glossary</a>';
+    }
     var chip = document.getElementById('userchip');
     chip.innerHTML =
       '<span class="role' + (s.role === 'instructor' ? ' instructor' : '') + '">' + esc(s.role) + '</span>' +
@@ -610,7 +622,7 @@
       else app.innerHTML = '<div class="panel"><h2>Instructor only</h2>' +
         '<p>Sign out and sign back in with the instructor code to reach this page.</p></div>';
     }
-    else if (Auth.isInstructor()) viewHome();
+    else if (Auth.isInstructor()) Dashboard.render(app);
     else Journey.render(app, Auth.progress());
 
     if (!parts.length || parts[0] !== 'm') window.scrollTo(0, 0);

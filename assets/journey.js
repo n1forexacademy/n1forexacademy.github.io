@@ -172,25 +172,50 @@
     var cert = progress.certificate;
     var issued = new Date(cert.issuedAt);
 
+    var sig = window.BRAND ? BRAND.signatory : { name: 'Jonathan Afolayan', title: 'Founder & Head of Training' };
+
     app.innerHTML =
       '<div class="crumb"><a href="#/">Path</a> / Certificate</div>' +
       '<div class="cert-wrap">' +
         '<div class="cert" id="certDoc">' +
-          '<div class="cert-rule"></div>' +
-          '<div class="cert-brand"><span class="brand-mark">N1</span><b>N1 Forex Academy</b></div>' +
-          '<p class="cert-kicker">Certificate of Completion</p>' +
-          '<h1 class="cert-name">' + esc(cert.name || session.name) + '</h1>' +
-          '<p class="cert-body">has completed the twelve-module N1 Forex Academy programme, including all ' +
-          'assessed practical drills on the trading simulator, position-sizing assessment, and a written trading plan ' +
-          'reviewed by an instructor.</p>' +
-          '<div class="cert-meta">' +
-            '<div><span>Issued</span><b>' + issued.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) + '</b></div>' +
-            '<div><span>Reference</span><b>' + esc(cert.id) + '</b></div>' +
+          '<div class="cert-frame">' +
+            '<div class="cert-corner tl"></div><div class="cert-corner tr"></div>' +
+            '<div class="cert-corner bl"></div><div class="cert-corner br"></div>' +
+
+            '<div class="cert-head">' + (window.BRAND ? BRAND.lockup(52) : '') + '</div>' +
+
+            '<p class="cert-kicker">Certificate of Completion</p>' +
+            '<p class="cert-presented">This is to certify that</p>' +
+            '<h1 class="cert-name">' + esc(cert.name || session.name) + '</h1>' +
+            '<p class="cert-body">has successfully completed the twelve-module <b>N1 Forex Academy</b> programme — ' +
+            'covering market structure, trade arithmetic, margin mechanics, chart reading, risk management and ' +
+            'position sizing — together with every assessed practical drill on the academy trading simulator and a ' +
+            'written trading plan reviewed by an instructor.</p>' +
+
+            '<div class="cert-sign">' +
+              '<div class="cert-sig-block">' +
+                '<div class="cert-sig-mark">' + (window.BRAND ? BRAND.signature() : '') + '</div>' +
+                '<div class="cert-sig-line"></div>' +
+                '<b>' + esc(sig.name) + '</b>' +
+                '<span>' + esc(sig.title) + '</span>' +
+                '<em>Electronically signed</em>' +
+              '</div>' +
+              '<div class="cert-seal-block">' + (window.BRAND ? BRAND.seal(cert.id) : '') + '</div>' +
+              '<div class="cert-sig-block">' +
+                '<div class="cert-sig-mark cert-date-mark">' +
+                  issued.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) +
+                '</div>' +
+                '<div class="cert-sig-line"></div>' +
+                '<b>Date of issue</b>' +
+                '<span>Reference ' + esc(cert.id) + '</span>' +
+                '<em>Verify with the academy</em>' +
+              '</div>' +
+            '</div>' +
+
+            '<p class="cert-disclaim">This certifies completion of training only. It is not a professional ' +
+            'qualification, not a regulatory licence, and not a prediction of trading profitability. The large ' +
+            'majority of retail traders lose money. No real funds were traded during this programme.</p>' +
           '</div>' +
-          '<p class="cert-disclaim">This certifies completion of training only. It is not a professional ' +
-          'qualification, not a licence, and not a prediction of trading profitability. The large majority of retail ' +
-          'traders lose money. No real funds were traded during this programme.</p>' +
-          '<div class="cert-rule"></div>' +
         '</div>' +
         '<div class="cert-actions">' +
           '<button class="btn primary" onclick="window.print()">Print / save as PDF</button>' +

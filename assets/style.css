@@ -1,41 +1,53 @@
 /* Forex Trading Academy — teaching materials stylesheet */
 
+/* N1 Forex Academy — palette.
+   Navy and gold on warm paper. Light is the default because a training
+   institution should read as a prospectus, not a terminal. The trading
+   terminal keeps its own dark chrome, defined in academy.css. */
 :root{
-  --bg:#f6f7fb;
-  --surface:#ffffff;
-  --surface-2:#eef1f8;
-  --ink:#12151d;
-  --ink-2:#4a5265;
-  --ink-3:#7b8398;
-  --line:#dfe3ee;
-  --accent:#1e5eff;
-  --accent-ink:#0b3bc0;
-  --bull:#0f9d58;
-  --bear:#e0402b;
-  --warn:#b26a00;
-  --warn-bg:#fff6e5;
+  --bg:#F7F5EF;                 /* warm paper, not clinical white */
+  --surface:#FFFFFF;
+  --surface-2:#F2EEE3;          /* warm tint for wells and headers */
+  --ink:#101E33;                /* deep navy, the primary text colour */
+  --ink-2:#465671;
+  --ink-3:#8290A6;
+  --line:#E4DECF;               /* warm hairline, never grey */
+  --accent:#123A6B;             /* navy — buttons, links, focus */
+  --accent-ink:#0B2A50;
+  --gold:#B8912F;               /* premium highlights, seals, logo */
+  --gold-soft:#E8D9A8;
+  --bull:#0B7A55;
+  --bear:#B3382C;
+  --warn:#9A6B12;
+  --warn-bg:#FBF3DF;
   --radius:14px;
-  --shadow:0 1px 2px rgba(18,21,29,.06), 0 8px 24px rgba(18,21,29,.06);
+  --shadow:0 1px 2px rgba(16,30,51,.05), 0 10px 30px rgba(16,30,51,.07);
+  --shadow-lg:0 20px 60px rgba(16,30,51,.16);
   --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
-  --sans:system-ui,-apple-system,"Segoe UI",Roboto,Inter,Helvetica,Arial,sans-serif;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Inter,Helvetica,Arial,sans-serif;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
 }
 
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0d1016;
-    --surface:#161b25;
-    --surface-2:#1e2532;
-    --ink:#eef1f7;
-    --ink-2:#b3bccd;
-    --ink-3:#7e8899;
-    --line:#2a3241;
-    --accent:#6d97ff;
-    --accent-ink:#a9c2ff;
-    --bull:#3ddc84;
-    --bear:#ff7059;
-    --warn:#ffc457;
-    --warn-bg:#2e2513;
-    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    --bg:#0A1424;               /* rich navy, deliberately not near-black */
+    --surface:#11203A;
+    --surface-2:#17294699;
+    --surface-2:#172946;
+    --ink:#F0F4FA;
+    --ink-2:#B7C4D8;
+    --ink-3:#7E8DA6;
+    --line:#22374F;
+    --accent:#7FB0EF;
+    --accent-ink:#A9CBFA;
+    --gold:#D9B85C;
+    --gold-soft:#4A3E1C;
+    --bull:#3FC08C;
+    --bear:#E8705F;
+    --warn:#E0B457;
+    --warn-bg:#2C2413;
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 30px rgba(0,0,0,.4);
+    --shadow-lg:0 24px 70px rgba(0,0,0,.6);
   }
 }
 
