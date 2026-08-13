@@ -633,11 +633,39 @@
   }
 
   /* ---------- router ---------- */
+  /* Views that aggregate every module need the whole catalogue. */
+  var NEEDS_ALL = { library: 1, glossary: 1, plan: 1, instructor: 1 };
+
+  /* Fetch any track content this route depends on, then dispatch. Keeps the
+     initial page load to the forex track only. */
   function route() {
-    document.onkeydown = null;
-    document.body.classList.remove('presenting');
     var h = (location.hash || '#/').replace(/^#\/?/, '');
     var parts = h.split('/').filter(Boolean);
+
+    var need = null;
+    if (window.Content) {
+      if (NEEDS_ALL[parts[0]] || (Auth.isInstructor() && !parts.length)) need = '*';
+      else need = Content.trackForRoute(parts);
+    }
+
+    var pending = !window.Content ? null
+      : need === '*' ? (Content.isLoaded('equities') && Content.isLoaded('bonds') ? null : Content.loadAll())
+      : (need && !Content.isLoaded(need)) ? Content.load(need)
+      : null;
+
+    if (!pending) { dispatch(parts); return; }
+
+    app.innerHTML = '<div class="loading">Loading course material…</div>';
+    pending.then(function () { dispatch(parts); }).catch(function (err) {
+      app.innerHTML = '<div class="panel"><h2>Could not load that section</h2>' +
+        '<p>' + esc(err.message || 'The course files did not load.') + '</p>' +
+        '<p>Check your connection and reload the page.</p></div>';
+    });
+  }
+
+  function dispatch(parts) {
+    document.onkeydown = null;
+    document.body.classList.remove('presenting');
 
     if (parts[0] !== 'drill') killTerminal();
 

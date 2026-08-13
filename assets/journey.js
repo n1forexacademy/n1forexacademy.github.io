@@ -85,6 +85,21 @@
   /* ---------- the journey ---------- */
   function renderJourney(app, progress) {
     var trackId = currentTrackId(progress);
+
+    // A returning student may land on a track whose curriculum has not been
+    // fetched yet. Guarding here covers boot, track switching and certificate
+    // navigation in one place.
+    if (window.Content && !Content.isLoaded(trackId)) {
+      app.innerHTML = '<div class="loading">Loading course material…</div>';
+      Content.load(trackId).then(function () {
+        renderJourney(app, Auth.progress());
+      }).catch(function () {
+        app.innerHTML = '<div class="panel"><h2>Could not load that track</h2>' +
+          '<p>Check your connection and reload the page.</p></div>';
+      });
+      return;
+    }
+
     var st = Path.state(progress, trackId);
     var session = Auth.session() || {};
     var firstName = String(session.name || '').split(' ')[0] || 'there';
@@ -174,9 +189,13 @@
         'Every override is recorded, so nobody quietly bypasses the risk stages.</p>' +
       '</div>';
 
-    // Track switching.
+    // Track switching. renderJourney fetches the curriculum if needed.
     app.querySelectorAll('.tchip[data-track]').forEach(function (b) {
-      b.onclick = function () { setTrack(b.dataset.track); renderJourney(app, Auth.progress()); window.scrollTo(0, 0); };
+      b.onclick = function () {
+        setTrack(b.dataset.track);
+        renderJourney(app, Auth.progress());
+        window.scrollTo(0, 0);
+      };
     });
   }
 
