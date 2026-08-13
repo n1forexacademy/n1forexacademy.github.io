@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "90 min",
 
   objectives: [
-    "Explain what a shareholder actually owns and what rights come with it",
-    "Describe how shares come into existence and how they change hands afterwards",
-    "Distinguish an exchange from an over-the-counter market and say why it matters",
-    "Explain why an equity has an upward long-run drift that a currency pair does not",
-    "State honestly what owning shares can and cannot do for you"
+    "Explain what you actually own when you hold a share, and what it entitles you to",
+    "Say where your money goes when you buy shares — and why it is usually not to the company",
+    "Explain what a real exchange gives you that the forex market could not",
+    "Understand why indices drift upward over time, and why your own holding does not inherit that",
+    "Say honestly what owning shares can and cannot do for you"
   ],
 
   misconceptions: [

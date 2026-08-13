@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "90 min",
 
   objectives: [
-    "Read a depth-of-market ladder and explain what each side represents",
-    "Choose between market, limit and stop orders in an exchange context",
-    "Explain how liquidity affects your fill and why it varies enormously between companies",
-    "Describe the auction periods at the open and close and why they matter",
-    "Explain settlement and what actually happens after you press buy"
+    "Read an order book and say what the waiting orders on each side represent",
+    "Choose the right order type now that you can see what is waiting at your price",
+    "Spot a thinly traded name, and understand why your own order would move its price",
+    "Explain why the first and last half-hour of the day behave differently from the rest",
+    "Say what actually happens after you press buy — and why a halted stock cannot be exited"
   ],
 
   misconceptions: [
