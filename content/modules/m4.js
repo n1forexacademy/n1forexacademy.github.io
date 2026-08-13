@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "90 min",
 
   objectives: [
-    "Evaluate a broker on regulation, execution model, costs and withdrawal record",
-    "Explain the difference between dealing-desk and agency execution and why it matters",
-    "Set up MT4/MT5 and TradingView to a consistent, readable working configuration",
-    "Install and troubleshoot indicators and expert advisors without guessing",
-    "Identify the account features that quietly damage returns"
+    "Check whether a broker is genuinely licensed, and whether its customers can actually get their money back out",
+    "Tell the difference between a broker that takes the other side of your trade and one that simply charges a fee",
+    "Compare what two brokers really cost, once spread and commission are put in the same unit",
+    "Set your platform and charts up so nothing is ambiguous when you are in a hurry",
+    "Spot the offers — bonuses, huge leverage, copy trading — that are built to catch beginners"
   ],
 
   misconceptions: [

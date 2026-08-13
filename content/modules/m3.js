@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "120 min",
 
   objectives: [
-    "Choose the correct order type for a given intention and place it accurately",
-    "Explain leverage as a margin requirement rather than as borrowed money",
-    "Compute required margin, free margin and margin level for a position",
-    "Describe the stop-out sequence step by step and identify what triggers it",
-    "Anticipate slippage and gaps, and explain why a stop loss is not a guarantee"
+    "Pick the right order type for what you are actually trying to do, and place it without second-guessing",
+    "Explain why leverage is permission from your broker, not borrowed money",
+    "Work out how much of your account a trade ties up, and how much breathing room is left",
+    "Describe, step by step, exactly what happens when a broker closes an account out",
+    "Understand why a stop loss is an instruction rather than a promise, and size your trades accordingly"
   ],
 
   misconceptions: [
