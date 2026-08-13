@@ -105,9 +105,61 @@
 
     var L = ls[index];
     var slides = (L.slides || []).map(function (si) { return mod.slides[si]; }).filter(Boolean);
-    var state = { page: 0, phase: 'read' };
+
+    /* The teaching layer.
+
+       Slides are presenter aids — deliberately terse so an instructor can talk
+       over them. A student reading alone got bullet points and then a test,
+       with no actual teaching in between. `teach` is the lesson in the
+       instructor's own voice: plain words, everyday comparisons, jargon broken
+       down as it appears. The slides follow as the summary. */
+    function teachHtml() {
+      var t = L.teach;
+      if (!t) return '';
+      var paras = function (arr) {
+        return (arr || []).map(function (p) { return '<p>' + md(p) + '</p>'; }).join('');
+      };
+      var terms = (t.terms || []).length
+        ? '<div class="tlex">' +
+            '<p class="tlex-h">Words you will keep meeting</p>' +
+            (t.terms || []).map(function (x) {
+              return '<div class="tlex-i">' +
+                '<b>' + esc(x.term) + '</b>' +
+                '<span class="tlex-p">' + md(x.plain) + '</span>' +
+                (x.like ? '<span class="tlex-l"><i>Think of it like:</i> ' + md(x.like) + '</span>' : '') +
+              '</div>';
+            }).join('') +
+          '</div>'
+        : '';
+      return '<div class="teach">' + paras(t.lead) + terms + paras(t.close) + '</div>';
+    }
+
+    var hasTeach = !!L.teach;
+    var state = { page: 0, phase: hasTeach ? 'teach' : 'read' };
 
     function draw() {
+      if (state.phase === 'teach') {
+        mount.innerHTML =
+          '<div class="lsn-head">' +
+            '<div><span class="lsn-k">Lesson ' + (index + 1) + ' of ' + ls.length + '</span>' +
+            '<h2>' + esc(L.title) + '</h2></div>' +
+          '</div>' +
+          teachHtml() +
+          '<div class="lsn-nav">' +
+            '<a class="btn" href="#/m/' + mod.id + '">All lessons</a>' +
+            '<button class="btn primary" id="lToPoints">' +
+              (slides.length ? 'Got it — show me the key points →' : 'Got it — take the check →') +
+            '</button>' +
+          '</div>';
+        mount.querySelector('#lToPoints').onclick = function () {
+          state.phase = slides.length ? 'read' : 'check';
+          state.page = 0;
+          draw();
+          window.scrollTo(0, 0);
+        };
+        return;
+      }
+
       if (state.phase === 'read') {
         var s = slides[state.page];
         mount.innerHTML =
@@ -132,13 +184,16 @@
           (Auth.isInstructor() && s.note
             ? '<div class="notes"><b>Instructor note.</b> ' + md(s.note) + '</div>' : '') +
           '<div class="lsn-nav">' +
-            '<button class="btn" id="lPrev"' + (state.page === 0 ? ' disabled' : '') + '>← Back</button>' +
+            '<button class="btn" id="lPrev"' + ((state.page === 0 && !hasTeach) ? ' disabled' : '') + '>← Back</button>' +
             '<button class="btn primary" id="lNext">' +
               (state.page === slides.length - 1 ? 'Take the check →' : 'Next page →') + '</button>' +
           '</div>';
 
         mount.querySelector('#lPrev').onclick = function () {
-          if (state.page > 0) { state.page--; draw(); window.scrollTo(0, 0); }
+          if (state.page > 0) { state.page--; }
+          else if (hasTeach) { state.phase = 'teach'; }
+          else return;
+          draw(); window.scrollTo(0, 0);
         };
         mount.querySelector('#lNext').onclick = function () {
           if (state.page < slides.length - 1) { state.page++; draw(); }
@@ -174,7 +229,7 @@
         '</div>';
 
       mount.querySelector('#lBack').onclick = function () {
-        state.phase = 'read'; state.page = 0; draw(); window.scrollTo(0, 0);
+        state.phase = hasTeach ? 'teach' : 'read'; state.page = 0; draw(); window.scrollTo(0, 0);
       };
 
       mount.querySelector('#lForm').addEventListener('submit', function (e) {

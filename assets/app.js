@@ -407,38 +407,53 @@
   }
 
   /* ---------- practical lab ---------- */
+  /* The practical lab.
+
+     A student and an instructor must NOT see the same thing here. The marking
+     rubric, the "where students go wrong" notes and the homework framing are
+     written FOR the instructor ABOUT the student — showing a student "watch for
+     this, nearly everyone shortcuts it" is both patronising and tells them the
+     answer. Students get the exercise; instructors get the exercise plus the
+     marking apparatus. */
   function renderLesson(m, panel) {
     var p = m.practical;
-    if (!p) { panel.innerHTML = '<div class="panel"><p>No lab for this module.</p></div>'; return; }
+    if (!p) { panel.innerHTML = '<div class="panel"><p>No exercise for this module.</p></div>'; return; }
+    var teaching = Auth.isInstructor();
 
     panel.innerHTML =
-      '<div class="panel">' +
+      '<div class="panel lab-panel">' +
+        '<p class="lab-kicker">Practical exercise</p>' +
         '<h2>' + esc(p.title) + '</h2>' +
-        '<p class="muted">' + esc(p.time || m.duration) + ' · Student works on a live chart while you supervise.</p>' +
-        (p.intro ? '<p>' + md(p.intro) + '</p>' : '') +
+        '<p class="lab-time">' + esc(p.time || m.duration) +
+          (teaching ? ' · supervised' : ' · work at your own pace') + '</p>' +
+        (p.intro ? '<p class="lab-intro">' + md(p.intro) + '</p>' : '') +
 
-        '<h3>What the student needs open</h3>' +
+        '<h3>' + (teaching ? 'What the student needs open' : 'What you will need open') + '</h3>' +
         '<ul class="tight">' + p.setup.map(function (s) { return '<li>' + md(s) + '</li>'; }).join('') + '</ul>' +
 
-        '<h3>Procedure</h3>' +
+        '<h3>' + (teaching ? 'Procedure' : 'Work through these in order') + '</h3>' +
         '<ol class="steps">' + p.steps.map(function (s) {
           return '<li><h4>' + esc(s.h) + '</h4><p>' + md(s.d) + '</p></li>';
         }).join('') + '</ol>' +
 
         (p.figure || '') +
 
-        '<div class="callout good"><p><b>Deliverable.</b> ' + md(p.deliverable) + '</p></div>' +
+        '<div class="callout good"><p><b>' + (teaching ? 'Deliverable.' : 'When you are done you should have:') +
+          '</b> ' + md(p.deliverable) + '</p></div>' +
 
-        '<h3>Marking rubric</h3>' +
-        '<div class="table-wrap"><table><thead><tr><th>Criterion</th><th>Competent looks like</th></tr></thead><tbody>' +
-          p.rubric.map(function (r) { return '<tr><td><b>' + esc(r.c) + '</b></td><td>' + md(r.d) + '</td></tr>'; }).join('') +
-        '</tbody></table></div>' +
-
-        (p.pitfalls ? '<h3>Where students go wrong</h3><ul class="tight">' +
-          p.pitfalls.map(function (x) { return '<li>' + md(x) + '</li>'; }).join('') + '</ul>' : '') +
-
-        (m.homework ? '<h3>Homework before the next session</h3><ul class="tight">' +
-          m.homework.map(function (x) { return '<li>' + md(x) + '</li>'; }).join('') + '</ul>' : '') +
+        // --- instructor-only from here ---
+        (teaching
+          ? '<h3>Marking rubric</h3>' +
+            '<div class="table-wrap"><table><thead><tr><th>Criterion</th><th>Competent looks like</th></tr></thead><tbody>' +
+              p.rubric.map(function (r) { return '<tr><td><b>' + esc(r.c) + '</b></td><td>' + md(r.d) + '</td></tr>'; }).join('') +
+            '</tbody></table></div>' +
+            (p.pitfalls ? '<h3>Where students go wrong</h3><ul class="tight">' +
+              p.pitfalls.map(function (x) { return '<li>' + md(x) + '</li>'; }).join('') + '</ul>' : '') +
+            (m.homework ? '<h3>Homework to set</h3><ul class="tight">' +
+              m.homework.map(function (x) { return '<li>' + md(x) + '</li>'; }).join('') + '</ul>' : '')
+          : (m.homework ? '<h3>Keep practising</h3><ul class="tight">' +
+              m.homework.map(function (x) { return '<li>' + md(x) + '</li>'; }).join('') + '</ul>' : '')
+        ) +
       '</div>';
   }
 
