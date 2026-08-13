@@ -9,7 +9,11 @@
     });
   }
 
+  /* Prefers the eager catalogue so step cards render without fetching module
+     content; falls back to loaded content if the catalogue is stale. */
   function moduleById(id) {
+    var meta = window.Content && Content.meta(id);
+    if (meta) return meta;
     return (window.COURSE || []).filter(function (m) { return m.id === +id; })[0] || null;
   }
   function drillById(id) {
@@ -86,20 +90,8 @@
   function renderJourney(app, progress) {
     var trackId = currentTrackId(progress);
 
-    // A returning student may land on a track whose curriculum has not been
-    // fetched yet. Guarding here covers boot, track switching and certificate
-    // navigation in one place.
-    if (window.Content && !Content.isLoaded(trackId)) {
-      app.innerHTML = '<div class="loading">Loading course material…</div>';
-      Content.load(trackId).then(function () {
-        renderJourney(app, Auth.progress());
-      }).catch(function () {
-        app.innerHTML = '<div class="panel"><h2>Could not load that track</h2>' +
-          '<p>Check your connection and reload the page.</p></div>';
-      });
-      return;
-    }
-
+    // No content fetch needed here — the journey renders entirely from the
+    // eager catalogue and track definitions.
     var st = Path.state(progress, trackId);
     var session = Auth.session() || {};
     var firstName = String(session.name || '').split(' ')[0] || 'there';

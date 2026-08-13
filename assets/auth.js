@@ -377,7 +377,7 @@
         pane.innerHTML = '<div class="panel"><p class="muted">Loading students…</p></div>';
         var data;
         try { data = await api('/api/admin/students'); } catch (e) { return err(e); }
-        var totalModules = (window.COURSE || []).length, totalDrills = (window.DRILLS || []).length;
+        var totalModules = (window.CATALOG || window.COURSE || []).length, totalDrills = (window.DRILLS || []).length;
 
         var rows = (data.students || []).map(function (s) {
           var mods = Object.keys(s.modules || {}).length;
@@ -593,7 +593,7 @@
 
     /* Local mode fallback: this-device roster and the code hashing tool. */
     renderInstructorLocal: async function (mount) {
-      var totalModules = (window.COURSE || []).length;
+      var totalModules = (window.CATALOG || window.COURSE || []).length;
       var drills = window.DRILLS || [];
       var self = this;
 

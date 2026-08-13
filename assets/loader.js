@@ -1,35 +1,27 @@
 /* N1 Forex Academy — lazy content loader.
 
-   Only the forex track ships in the initial page load. The equities and bonds
-   curricula are fetched the moment a student actually opens them, which for
-   most students is never — they are locked until the previous certificate.
+   Nothing but the 6.8 KB catalogue ships in the initial page load. A module's
+   slides, lab, quiz and lessons are fetched the first time it is opened.
 
-   Track DEFINITIONS (content/tracks.js) stay eager and are tiny: the path
-   engine and route guards need to know a track exists, and whether it is
-   locked, without knowing what is inside it.
+   Two things stay eager because everything else depends on them:
+     content/tracks.js   — track definitions, so the path engine knows a track
+                           exists and whether it is locked
+     content/catalog.js  — module titles and taglines, so the journey and
+                           library render without fetching content
 
-   Files within a track load SEQUENTIALLY. Each one does
-   `window.COURSE = (window.COURSE || []).concat([...])`, so two loading
-   concurrently could read the same array and lose one another's modules. */
+   Each module's files load SEQUENTIALLY. Both do
+   `window.COURSE = (window.COURSE || []).concat([...])` style appends, and two
+   running concurrently could read the same array and lose one another's work.
+   Different modules load in parallel safely — the guard is per module. */
 (function () {
   'use strict';
 
-  var MANIFEST = {
-    forex: [],                       // already in the initial page load
-    equities: [
-      'content/equities.js',
-      'content/equities-2.js',
-      'content/lessons-equities.js'
-    ],
-    bonds: [
-      'content/bonds.js',
-      'content/bonds-2.js',
-      'content/lessons-bonds.js'
-    ]
-  };
+  var loaded = {};        // moduleId -> true
+  var inFlight = {};      // moduleId -> Promise
 
-  var loaded = { forex: true };
-  var inFlight = {};
+  function filesFor(id) {
+    return ['content/modules/m' + id + '.js', 'content/lessons/l' + id + '.js'];
+  }
 
   function injectScript(src) {
     return new Promise(function (resolve, reject) {
@@ -37,66 +29,94 @@
       s.src = src;
       s.async = false;
       s.onload = function () { resolve(src); };
-      s.onerror = function () { reject(new Error('Failed to load ' + src)); };
+      // A missing lessons file is not fatal — the module falls back to the
+      // slides-then-one-test view, which is how unauthored modules behave.
+      s.onerror = function () {
+        if (src.indexOf('/lessons/') > -1) resolve(null);
+        else reject(new Error('Could not load ' + src));
+      };
       document.head.appendChild(s);
     });
   }
 
-  // Sequential, for the concat race described above.
   function loadSeries(files) {
     return files.reduce(function (chain, f) {
       return chain.then(function () { return injectScript(f); });
     }, Promise.resolve());
   }
 
-  function load(trackId) {
-    if (!trackId || loaded[trackId]) return Promise.resolve(false);
-    if (inFlight[trackId]) return inFlight[trackId];
-    var files = MANIFEST[trackId];
-    if (!files) { loaded[trackId] = true; return Promise.resolve(false); }
+  /* Load one module's content. Resolves immediately if already present. */
+  function loadModule(id) {
+    id = +id;
+    if (!id || loaded[id]) return Promise.resolve(false);
+    // Already present from a previous load or an eager include.
+    if ((window.COURSE || []).some(function (m) { return m.id === id; })) {
+      loaded[id] = true;
+      return Promise.resolve(false);
+    }
+    if (inFlight[id]) return inFlight[id];
 
-    inFlight[trackId] = loadSeries(files).then(function () {
-      loaded[trackId] = true;
-      delete inFlight[trackId];
-      return true;                                   // true = something was fetched
+    inFlight[id] = loadSeries(filesFor(id)).then(function () {
+      loaded[id] = true;
+      delete inFlight[id];
+      return true;
     }).catch(function (err) {
-      delete inFlight[trackId];
+      delete inFlight[id];
       throw err;
     });
-    return inFlight[trackId];
+    return inFlight[id];
   }
+
+  function loadModules(ids) {
+    return Promise.all((ids || []).map(loadModule));
+  }
+
+  /* Every module belonging to a track, from the catalogue. */
+  function moduleIdsOfTrack(trackId) {
+    return (window.CATALOG || [])
+      .filter(function (c) { return (c.track || 'forex') === trackId; })
+      .map(function (c) { return c.id; });
+  }
+
+  function loadTrack(trackId) { return loadModules(moduleIdsOfTrack(trackId)); }
 
   function loadAll() {
-    return Object.keys(MANIFEST).reduce(function (chain, id) {
-      return chain.then(function () { return load(id); });
-    }, Promise.resolve());
+    return loadModules((window.CATALOG || []).map(function (c) { return c.id; }));
   }
 
-  function isLoaded(trackId) { return !!loaded[trackId]; }
+  function isModuleLoaded(id) {
+    return !!loaded[+id] || (window.COURSE || []).some(function (m) { return m.id === +id; });
+  }
+  function isTrackLoaded(trackId) {
+    return moduleIdsOfTrack(trackId).every(isModuleLoaded);
+  }
 
-  /* Which track a route needs before it can render. Uses only the eager track
-     definitions, so it works before any content has been fetched. */
-  function trackForRoute(parts) {
-    if (!window.Path) return null;
-    if (parts[0] === 'm' && parts[1]) return Path.trackOfModule(+parts[1]);
-    if (parts[0] === 'certificate') return parts[1] || 'forex';
-    if (parts[0] === 'drill' && parts[1]) {
-      var hit = null;
-      Path.trackList().forEach(function (t) {
-        Path.flatSteps(t.id).forEach(function (s) {
-          if (s.type === 'drill' && s.ref === parts[1]) hit = t.id;
-        });
-      });
-      return hit;
+  /* Metadata without content — used by the journey and library. */
+  function meta(id) {
+    return (window.CATALOG || []).filter(function (c) { return c.id === +id; })[0] || null;
+  }
+
+  /* What a route needs before it can render. Uses only eager data. */
+  function needsFor(parts) {
+    var NEEDS_ALL = { library: 1, glossary: 1, plan: 1 };
+    if (NEEDS_ALL[parts[0]]) return { all: true };
+    if (parts[0] === 'm' && parts[1]) return { modules: [+parts[1]] };
+    if (parts[0] === 'certificate') {
+      // The certificate counts completed steps; it needs its track's modules.
+      return { track: parts[1] || 'forex' };
     }
     return null;
   }
 
   window.Content = {
-    load: load,
+    loadModule: loadModule,
+    loadModules: loadModules,
+    loadTrack: loadTrack,
     loadAll: loadAll,
-    isLoaded: isLoaded,
-    trackForRoute: trackForRoute,
-    manifest: MANIFEST
+    isModuleLoaded: isModuleLoaded,
+    isTrackLoaded: isTrackLoaded,
+    moduleIdsOfTrack: moduleIdsOfTrack,
+    meta: meta,
+    needsFor: needsFor
   };
 })();

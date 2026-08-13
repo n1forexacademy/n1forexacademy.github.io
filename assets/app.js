@@ -3,7 +3,11 @@
 (function () {
   'use strict';
 
-  var MODULES = (window.COURSE || []).slice().sort(function (a, b) { return a.id - b.id; });
+  /* Live view of whatever content is currently loaded. Must be a function:
+     modules arrive lazily, so capturing this at boot would freeze it empty. */
+  function MODULES() {
+    return (window.COURSE || []).slice().sort(function (a, b) { return a.id - b.id; });
+  }
   var app = document.getElementById('app');
 
   /* ---------- helpers ---------- */
@@ -30,10 +34,10 @@
 
   /* ---------- home ---------- */
   function viewHome() {
-    var totalSlides = MODULES.reduce(function (n, m) { return n + m.slides.length; }, 0);
-    var totalLabs = MODULES.filter(function (m) { return m.practical; }).length;
+    var totalSlides = MODULES().reduce(function (n, m) { return n + m.slides.length; }, 0);
+    var totalLabs = MODULES().filter(function (m) { return m.practical; }).length;
 
-    var cards = MODULES.map(function (m) {
+    var cards = MODULES().map(function (m) {
       return '<a class="card" href="#/m/' + m.id + '">' +
         '<span class="num">Module ' + m.id + '</span>' +
         '<h3>' + esc(m.title) + '</h3>' +
@@ -50,7 +54,7 @@
         '<h1>N1 Forex Academy</h1>' +
         '<p class="lede">A complete 12-module teaching kit: presenter slides with instructor notes, a hands-on practical lab for every module, quizzes with answer explanations, and a glossary. Built to be taught, not just read.</p>' +
         '<div class="stat-row">' +
-          '<div class="stat"><b>' + MODULES.length + '</b>modules</div>' +
+          '<div class="stat"><b>' + MODULES().length + '</b>modules</div>' +
           '<div class="stat"><b>' + totalSlides + '</b>slides</div>' +
           '<div class="stat"><b>' + totalLabs + '</b>practical labs</div>' +
           '<div class="stat"><b>~24h</b>contact time</div>' +
@@ -84,7 +88,7 @@
 
   /* ---------- course plan ---------- */
   function viewPlan() {
-    var rows = MODULES.map(function (m) {
+    var rows = MODULES().map(function (m) {
       return '<tr><td><b>' + m.id + '</b></td><td><a href="#/m/' + m.id + '">' + esc(m.title) + '</a></td>' +
         '<td>' + esc(m.level) + '</td><td>' + esc(m.duration) + '</td>' +
         '<td>' + esc(m.practical ? m.practical.deliverable : '—') + '</td></tr>';
@@ -200,7 +204,7 @@
   /* ---------- glossary ---------- */
   function viewGlossary() {
     var all = [];
-    MODULES.forEach(function (m) {
+    MODULES().forEach(function (m) {
       (m.glossary || []).forEach(function (g) { all.push({ t: g.t, d: g.d, m: m.id }); });
     });
     all.sort(function (a, b) { return a.t.toLowerCase().localeCompare(b.t.toLowerCase()); });
@@ -248,7 +252,7 @@
   }
 
   function viewModule(id, tab) {
-    var m = MODULES.find(function (x) { return x.id === id; });
+    var m = MODULES().find(function (x) { return x.id === id; });
     if (!m) { app.innerHTML = '<div class="panel"><h2>Module not found</h2><p><a href="#/">Back to your path</a></p></div>'; return; }
     if (!Auth.isInstructor() && !Path.moduleUnlocked(id, Auth.progress())) {
       return lockedNotice('Modules', 'Module ' + id + ' — ' + m.title);
@@ -259,8 +263,8 @@
     // Modules with authored lessons are delivered lesson-by-lesson.
     var hasLessons = !!(window.Lessons && Lessons.forModule(m.id));
 
-    var prev = MODULES.find(function (x) { return x.id === id - 1; });
-    var next = MODULES.find(function (x) { return x.id === id + 1; });
+    var prev = MODULES().find(function (x) { return x.id === id - 1; });
+    var next = MODULES().find(function (x) { return x.id === id + 1; });
 
     app.innerHTML =
       '<div class="crumb"><a href="#/">Modules</a> / Module ' + m.id + '</div>' +
@@ -566,7 +570,8 @@
       return lockedNotice('Drills', d.title);
     }
 
-    var mod = MODULES.find(function (m) { return m.id === d.module; });
+    var mod = (window.Content && Content.meta(d.module)) ||
+              MODULES().find(function (m) { return m.id === d.module; });
 
     app.innerHTML =
       '<div class="crumb"><a href="#/drills">Trading Floor</a> / ' + esc(d.title) + '</div>' +
@@ -633,29 +638,33 @@
   }
 
   /* ---------- router ---------- */
-  /* Views that aggregate every module need the whole catalogue. */
-  var NEEDS_ALL = { library: 1, glossary: 1, plan: 1, instructor: 1 };
-
-  /* Fetch any track content this route depends on, then dispatch. Keeps the
-     initial page load to the forex track only. */
+  /* Fetch only the module content this route actually needs, then dispatch.
+     The journey, library listings and route guards run off the eager catalogue,
+     so most navigation fetches nothing at all. */
   function route() {
     var h = (location.hash || '#/').replace(/^#\/?/, '');
     var parts = h.split('/').filter(Boolean);
 
-    var need = null;
+    var pending = null;
     if (window.Content) {
-      if (NEEDS_ALL[parts[0]] || (Auth.isInstructor() && !parts.length)) need = '*';
-      else need = Content.trackForRoute(parts);
+      var need = Content.needsFor(parts);
+      if (need) {
+        if (need.all && !Content.isTrackLoaded('forex')) pending = Content.loadAll();
+        else if (need.all) {
+          var missing = (window.CATALOG || []).map(function (c) { return c.id; })
+                          .filter(function (id) { return !Content.isModuleLoaded(id); });
+          pending = missing.length ? Content.loadModules(missing) : null;
+        }
+        else if (need.track && !Content.isTrackLoaded(need.track)) pending = Content.loadTrack(need.track);
+        else if (need.modules && need.modules.some(function (id) { return !Content.isModuleLoaded(id); })) {
+          pending = Content.loadModules(need.modules);
+        }
+      }
     }
-
-    var pending = !window.Content ? null
-      : need === '*' ? (Content.isLoaded('equities') && Content.isLoaded('bonds') ? null : Content.loadAll())
-      : (need && !Content.isLoaded(need)) ? Content.load(need)
-      : null;
 
     if (!pending) { dispatch(parts); return; }
 
-    app.innerHTML = '<div class="loading">Loading course material…</div>';
+    app.innerHTML = '<div class="loading">Loading…</div>';
     pending.then(function () { dispatch(parts); }).catch(function (err) {
       app.innerHTML = '<div class="panel"><h2>Could not load that section</h2>' +
         '<p>' + esc(err.message || 'The course files did not load.') + '</p>' +
@@ -670,7 +679,7 @@
     if (parts[0] !== 'drill') killTerminal();
 
     if (parts[0] === 'm' && parts[1] && parts[2] === 'lesson' && parts[3] !== undefined) {
-      var lm = MODULES.find(function (x) { return x.id === +parts[1]; });
+      var lm = MODULES().find(function (x) { return x.id === +parts[1]; });
       if (!lm) { app.innerHTML = '<div class="panel"><h2>Module not found</h2></div>'; return; }
       if (!Auth.isInstructor() && !Path.moduleUnlocked(+parts[1], Auth.progress())) {
         return lockedNotice('Modules', 'Module ' + parts[1] + ' — ' + lm.title);
