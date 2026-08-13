@@ -118,3 +118,7 @@ a.lsn:hover .lsn-t{color:var(--accent)}
   .lsn-final .btn{width:100%}
   .teach{font-size:1rem}
 }
+
+/* icons inside the lesson list */
+.lsn-i svg{width:14px;height:14px;display:block}
+.lock-big svg{width:34px;height:34px;margin:0 auto;color:var(--ink-3)}

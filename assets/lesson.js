@@ -24,6 +24,14 @@
                  .replace(/\*(.+?)\*/g, '<em>$1</em>');
   }
 
+  /* Matches the icon set used on the path — emoji rendered inconsistently and
+     looked out of place beside the serif headings. */
+  var I = {
+    tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5.5 5.5L20 7"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
+    cert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><path d="M8.2 13.4 7 22l5-2.5L17 22l-1.2-8.6"/></svg>'
+  };
+
   function lessonsFor(moduleId) {
     return (window.LESSONS && window.LESSONS[moduleId]) || null;
   }
@@ -60,7 +68,7 @@
       var status = done[i] ? 'done' : (i === cur ? 'current' : 'locked');
       var written = !!L.teach;
       var inner =
-        '<span class="lsn-i">' + (status === 'done' ? '✓' : status === 'locked' ? '🔒' : (i + 1)) + '</span>' +
+        '<span class="lsn-i">' + (status === 'done' ? I.tick : status === 'locked' ? I.lock : (i + 1)) + '</span>' +
         '<span class="lsn-b">' +
           '<span class="lsn-k">Lesson ' + (i + 1) + ' · ' + (written ? 'read' : 'read') +
             ' + ' + (L.check || []).length + '-question check</span>' +
@@ -75,11 +83,11 @@
     mount.innerHTML =
       '<div class="panel">' +
         '<h2>Lessons</h2>' +
-        '<p class="muted">Read a lesson, answer two questions on it, then the next opens. ' +
-        'Short checks find a gap while it is still small — a single quiz at the end does not.</p>' +
+        '<p class="muted">Work through these in order. Each one is a short read followed by two questions, ' +
+        'so you find out straight away whether it landed. Take them at your own pace — there is no timer.</p>' +
         '<div class="lsn-list">' + rows + '</div>' +
         '<div class="lsn-final ' + (allDone ? 'open' : 'shut') + '">' +
-          '<span class="lsn-i">' + (allDone ? '🎓' : '🔒') + '</span>' +
+          '<span class="lsn-i">' + (allDone ? I.cert : I.lock) + '</span>' +
           '<span class="lsn-b"><span class="lsn-k">Final</span>' +
           '<span class="lsn-t">Module test — ' + (mod.quiz || []).length + ' questions</span>' +
           '<span class="lsn-r">' + (allDone
@@ -97,7 +105,7 @@
 
     // Cannot open a lesson beyond the current one.
     if (index > currentIndex(mod.id)) {
-      mount.innerHTML = '<div class="panel locked-panel"><div class="lock-big">🔒</div>' +
+      mount.innerHTML = '<div class="panel locked-panel"><div class="lock-big">' + I.lock + '</div>' +
         '<h2>Finish the lesson before this one</h2>' +
         '<p>Lessons open in order. <a href="#/m/' + mod.id + '">Back to the lesson list</a></p></div>';
       return;

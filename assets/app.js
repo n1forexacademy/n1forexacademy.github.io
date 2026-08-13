@@ -267,7 +267,7 @@
     var next = MODULES().find(function (x) { return x.id === id + 1; });
 
     app.innerHTML =
-      '<div class="crumb"><a href="#/">Modules</a> / Module ' + m.id + '</div>' +
+      '<div class="crumb"><a href="#/">' + (Auth.isInstructor() ? 'Library' : 'My path') + '</a> / Module ' + m.id + '</div>' +
       '<div class="module-head">' +
         '<h1>' + esc(m.title) + '</h1>' +
         '<p class="lede">' + esc(m.tagline) + '</p>' +
@@ -277,7 +277,7 @@
       '</div>' +
       '<div class="tabs" role="tablist">' +
         (hasLessons
-          ? ['slides|Lessons', 'lab|Practical Lab', 'quiz|Module test', 'notes|Objectives &amp; Terms']
+          ? ['slides|Lessons', 'lab|Practice', 'quiz|Module test', 'notes|Key words']
           : ['slides|Slides', 'lab|Practical Lab', 'quiz|Quiz', 'notes|Objectives &amp; Terms']
         ).map(function (t) {
           var p = t.split('|');
@@ -506,15 +506,26 @@
   }
 
   /* ---------- objectives & terms ---------- */
+  /* Objectives are written as instructor targets ("the student can…") and the
+     misconceptions list is teaching strategy — neither should be read by the
+     person they are written about. Students get the same substance addressed to
+     them, and the glossary. */
   function renderNotes(m, panel) {
+    var teaching = Auth.isInstructor();
     panel.innerHTML =
       '<div class="panel">' +
-        '<h2>Learning objectives</h2>' +
-        '<p class="muted">By the end of this module the student can:</p>' +
-        '<ul class="tight">' + m.objectives.map(function (o) { return '<li>' + md(o) + '</li>'; }).join('') + '</ul>' +
-        (m.misconceptions ? '<h3>Misconceptions to attack head-on</h3><ul class="tight">' +
-          m.misconceptions.map(function (x) { return '<li>' + md(x) + '</li>'; }).join('') + '</ul>' : '') +
-        '<h3>Key terms introduced here</h3>' +
+        (teaching
+          ? '<h2>Learning objectives</h2>' +
+            '<p class="muted">By the end of this module the student can:</p>' +
+            '<ul class="tight">' + m.objectives.map(function (o) { return '<li>' + md(o) + '</li>'; }).join('') + '</ul>' +
+            (m.misconceptions ? '<h3>Misconceptions to attack head-on</h3><ul class="tight">' +
+              m.misconceptions.map(function (x) { return '<li>' + md(x) + '</li>'; }).join('') + '</ul>' : '')
+          : '<h2>What you will be able to do</h2>' +
+            '<p class="muted">Once you have finished this module, you should be able to:</p>' +
+            '<ul class="tight">' + m.objectives.map(function (o) { return '<li>' + md(o) + '</li>'; }).join('') + '</ul>'
+        ) +
+        '<h3>' + (teaching ? 'Key terms introduced here' : 'Words used in this module') + '</h3>' +
+        (teaching ? '' : '<p class="muted">Come back to this list any time a word stops making sense.</p>') +
         '<div class="table-wrap"><table><thead><tr><th>Term</th><th>Meaning</th></tr></thead><tbody>' +
           (m.glossary || []).map(function (g) { return '<tr><td><b>' + esc(g.t) + '</b></td><td>' + md(g.d) + '</td></tr>'; }).join('') +
         '</tbody></table></div>' +
