@@ -13,7 +13,7 @@ window.COURSE = (window.COURSE || []).concat([
     "Backtest a plan honestly and recognise the biases that make backtests lie",
     "Run a structured forward test on demo and interpret the results",
     "Maintain a journal that produces actionable findings rather than a diary",
-    "Identify their own dominant psychological failure mode and design a countermeasure",
+    "Work out which way you personally tend to break under pressure, and build a guard against it",
     "Evaluate expert advisors and automation realistically"
   ],
 

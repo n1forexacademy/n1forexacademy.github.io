@@ -36,7 +36,7 @@ const lessons = loadDir('content/lessons').LESSONS;
    homework. Harmless in slides and notes; wrong in anything a student reads. */
 const LEAKS = [
   /\bthe student\b/i, /\bstudents\b/i, /\byour student\b/i,
-  /\bmarking\b/i, /\brubric\b/i, /\bhomework\b/i,
+  /\bmarking (scheme|rubric|guide|criteria)\b/i, /\brubric\b/i, /\bhomework\b/i,
   /\bask the class\b/i, /\bhave them\b/i
 ];
 

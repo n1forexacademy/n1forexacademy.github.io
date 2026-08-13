@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "120 min",
 
   objectives: [
-    "Mark support and resistance objectively and consistently",
-    "Explain why levels work in terms of resting orders rather than as chart magic",
-    "Identify supply and demand zones and distinguish them from single-price levels",
-    "Recognise where stop liquidity accumulates and how price interacts with it",
-    "Combine levels with structure to identify high-quality trade locations"
+    "Mark support and resistance the same way every time, so your charts are consistent",
+    "Explain why a level works — the orders waiting there — rather than treating it as chart magic",
+    "Spot the areas a sharp move launched from, and why they are worth more than a single line",
+    "Work out where everyone else's stops are sitting, and keep yours out of that crowd",
+    "Combine levels with structure to find the places genuinely worth trading"
   ],
 
   misconceptions: [

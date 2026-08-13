@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "120 min",
 
   objectives: [
-    "State what each major indicator actually computes, in one sentence",
-    "Classify indicators by family and avoid stacking redundant ones",
-    "Use moving averages, RSI, MACD, Bollinger Bands and ATR appropriately",
-    "Use ATR to size stops to volatility rather than to a fixed pip count",
-    "Explain lag, repainting and curve-fitting, and evaluate any new indicator sceptically"
+    "Say in one plain sentence what any major indicator is actually calculating",
+    "Recognise when two indicators are really telling you the same thing twice",
+    "Use moving averages, RSI, MACD, Bollinger Bands and ATR for what each is good at",
+    "Size a stop to how much the instrument actually moves, instead of a fixed pip count",
+    "Test any indicator someone sells you — starting with whether it rewrites its own history"
   ],
 
   misconceptions: [
