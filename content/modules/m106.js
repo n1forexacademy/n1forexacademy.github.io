@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "90 min",
 
   objectives: [
-    "Explain what an index is and how weighting changes its behaviour",
-    "Describe what an ETF is and how it differs from owning the constituents",
-    "Explain beta and why a share moves with its market",
-    "Identify sector groupings and why they move together",
-    "Apply correlation discipline to an equity portfolio"
+    "Explain what an index really measures, and why its weighting changes the story",
+    "Say what a fund removes from your risk, and what it leaves completely untouched",
+    "Explain why most of a share's daily move has nothing to do with the company",
+    "Recognise when several holdings are really one bet on the same industry",
+    "Count what you actually own, including the companies you hold twice without realising"
   ],
 
   misconceptions: [

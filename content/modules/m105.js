@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "90 min",
 
   objectives: [
-    "Explain the earnings cycle and why the reaction often contradicts the result",
-    "Identify the scheduled events that create predictable gap risk",
-    "Describe the main corporate actions and what each does to your holding",
-    "Apply an events policy that prevents being caught leveraged through a known catalyst",
-    "Explain why guidance usually matters more than the reported figures"
+    "Explain the earnings cycle, and why a good result often sends a share down",
+    "Know which company events create gap risk you can see coming",
+    "Say what each corporate action actually does to the shares you hold",
+    "Follow an events policy that stops you being caught leveraged into a known date",
+    "Explain why what management says about next year outweighs what they just reported"
   ],
 
   misconceptions: [
