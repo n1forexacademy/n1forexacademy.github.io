@@ -314,9 +314,52 @@ window.API_BASE = 'https://n1-academy-api.YOUR-SUBDOMAIN.workers.dev';
 
 Commit and push. The site switches to server mode on the next Pages build.
 
-### 7.2 Enrolling people
+### 7.2 Enrolling people — the admin panel
 
-There is no signup form by design — you issue codes.
+Day-to-day enrolment happens **in the website**, not the command line. Sign in as instructor and go
+to `#/instructor`.
+
+**Students tab** — every account with modules opened, average quiz score, drills passed and last
+activity. Per row you can **Reset code** (they are signed out and must use the new one) or
+**Revoke** (signed out, cannot sign back in, progress retained). There is also a direct-add form if
+you want to set someone's code yourself.
+
+**Invite links tab** — the normal route. Create a link with a label, a use limit and an expiry, then
+send it to the student. They open it, choose **their own password**, and the account creates itself.
+You never see or handle their credential, and there is nothing to read out over the phone.
+
+The link is shown **once** — the token is stored only as a SHA-256 hash, so it cannot be recovered.
+Create a new one if it is lost. Links can be revoked at any time, and `invite_uses` records who
+joined through which link.
+
+Authorisation for all of the above is the **instructor session**, not `ADMIN_KEY`.
+
+### 7.2.1 Bootstrap — creating the very first instructor
+
+Something has to create the first admin before any admin session can exist. That is the *only* thing
+`ADMIN_KEY` is for, and it is needed exactly once.
+
+Set a key (do **not** save it inside the repo folder — `.gitignore` blocks the obvious filenames,
+but keep it elsewhere entirely):
+
+```powershell
+npx wrangler secret put ADMIN_KEY
+```
+
+Then create your instructor account, choosing your own code:
+
+```powershell
+$API="https://n1-academy-api.n1forexacademy.workers.dev"; $KEY="your-admin-key"
+```
+
+```powershell
+Invoke-RestMethod -Uri "$API/api/enroll" -Method Post -Headers @{"x-admin-key"=$KEY} -ContentType "application/json" -Body '{"id":"instructor","name":"Your Name","code":"your-own-code","role":"instructor"}'
+```
+
+Sign in with that code and everything else is in the admin panel. If you ever lose instructor access,
+rotate `ADMIN_KEY` and repeat this to recover.
+
+### 7.2.2 Direct API (rarely needed)
 
 In **PowerShell** (note `Invoke-RestMethod`, not curl — PowerShell aliases `curl` to something else
 and the flags will not work):
