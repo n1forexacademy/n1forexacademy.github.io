@@ -131,7 +131,9 @@ a genuine login in front of the site. See [ARCHITECTURE.md §7](ARCHITECTURE.md)
 
 Content is plain JavaScript data — no templating language.
 
-- `content/modules-1.js` / `-2.js` / `-3.js` — course modules
+- `content/modules/mN.js` — one file per module, loaded on demand
+- `content/lessons/lN.js` — that module's lessons
+- `content/catalog.js` — GENERATED metadata; rerun `node tools/build-catalog.mjs` after title changes
 - `content/drills.js` — trading drills
 - `content/roster.js` — students and access codes
 - `assets/style.css` — change `--accent` and the brand colour propagates everywhere

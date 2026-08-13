@@ -13,10 +13,19 @@ simulator works, how to add content, what the access gate is and is not, and how
 A static teaching site. **No build step, no framework, no package.json, no dependencies.**
 Plain HTML/CSS/JS loaded with `<script>` tags. Open `index.html` through any web server and it runs.
 
-Two halves:
+Three tracks, unlocked in sequence, each ending in its own certificate:
 
-- **Course** — 12 modules of presenter slides, practical labs, quizzes, glossary.
-- **Trading Floor** — a simulated market with a full account model and 7 assessed drills.
+| Track | Modules | Unlocks after |
+|---|---|---|
+| Forex | 12 (ids 1–12) | — |
+| Equities & Shares | 8 (ids 101–108) | Forex certificate |
+| Bonds & Fixed Income | 6 (ids 201–206) | Equities certificate |
+
+Each module is delivered lesson-by-lesson: read a short lesson, pass a two-question check on it,
+then the next opens. The module test unlocks only when every lesson is passed.
+
+Plus a **Trading Floor** — a simulated market with a full account model, a risk guard that steps
+down from enforcing to advisory to off, and 7 assessed drills.
 
 ---
 
@@ -29,24 +38,89 @@ index.html              Shell. Loads every script in dependency order. Edit here
 
 assets/
   style.css             Base design system. CSS custom properties at the top drive all colour.
-  academy.css           Gate, terminal, drill and instructor styles. Loaded second.
-  app.js                Router, views, slide deck, quiz. The entry point.
+  academy.css           Gate, terminal, drill and instructor styles.
+  brand.css             Logo lockup and the certificate document.
+  journey.css           Student path, certificate, demo period.
+  tracks.css            Track selector strip.
+  lesson.css            Lesson flow (read → check → next).
+  tools.css             Calculators.
+  present.css           Presenter mode (deliberately dark, whatever the theme).
+  dashboard.css         Instructor dashboard.
+  illustrations.css     Platform illustrations.
+
+  app.js                Router, views, slide deck, module test. The entry point.
+  loader.js             LAZY CONTENT LOADER — see §2.1. Fetches modules on demand.
   auth.js               Sign-in + progress. Local mode OR server mode — see §7.
+  progress-engine.js    Tracks, gating, step state. Pure logic, no DOM.
+  journey.js            Student path, certificates, supervised demo log.
+  lesson.js             Lesson flow and per-lesson checks.
+  dashboard.js          Instructor cohort view.
+  present.js            Presenter mode for teaching live.
   engine.js             SIMULATION CORE. Market feed, account/margin model, risk guard. No DOM.
   terminal.js           Terminal UI. Canvas chart, order ticket, panels, guard modal.
+  tools.js              Sixteen trader calculators.
 
 worker/                 OPTIONAL backend. Only needed for server mode (§7).
   src/index.js          Auth + progress API (Cloudflare Worker).
   schema.sql            D1 tables: students, sessions, progress.
+  migrations/           002 invites, 003 usernames. Apply in order.
+  test/run-tests.sh     43-assertion suite against the live Worker.
   wrangler.toml         Config. database_id and ALLOWED_ORIGINS go here.
+
+tools/
+  build-catalog.mjs     REGENERATES content/catalog.js. Run after editing a
+                        module's title, tagline, level or duration.
 
 content/
   roster.js             API_BASE switch + local-mode access codes. EDIT THIS.
-  modules-1.js          Modules 1–4   (foundation)
-  modules-2.js          Modules 5–8   (chart reading)
-  modules-3.js          Modules 9–12  (risk, strategy, systemising)
+  catalog.js            GENERATED. Metadata for all 26 modules — see §2.1.
+  tracks.js             The three tracks and their stages. Eager, small.
+  path.js               The forex track's stages + demo-period thresholds.
+  modules/mN.js         One file per module. Lazy. 1–12 forex, 101–108
+                        equities, 201–206 bonds.
+  lessons/lN.js         One file per module's lessons. Lazy.
   drills.js             The 7 assessed trading drills.
+  illustrations.js      Annotated drawings of the academy's own terminal.
+  brand.js              Logo, seal, signature, signatory details.
 ```
+
+### 2.1 Lazy loading and the catalogue
+
+Loading all 26 modules eagerly meant a 607 KB download before anything rendered.
+Content is now fetched **per module, on demand** — the initial payload is 52 KB.
+
+The piece that makes this work is **`content/catalog.js`**: id, title, tagline,
+level, duration and counts for every module, 6.8 KB total. The journey, library
+listings and route guards all render from it, so navigating the path fetches
+nothing. Only opening a module pulls its slides, lab, quiz and lessons.
+
+```
+EAGER   catalog.js · tracks.js · path.js · drills.js · roster.js
+        illustrations.js · brand.js                          ~52 KB
+LAZY    content/modules/mN.js + content/lessons/lN.js    ~21 KB each
+```
+
+`assets/loader.js` owns this. Notes for anyone changing it:
+
+- **Files within one module load sequentially.** Both append to shared arrays
+  (`window.COURSE`, `window.LESSONS`); two running concurrently could read the
+  same array and lose one another's work. Different modules load in parallel
+  safely — the guard is per module.
+- **An in-flight promise cache** means three concurrent requests for the same
+  module resolve once.
+- **A missing lessons file is not fatal.** The module falls back to the
+  slides-then-one-test view, which is how an unauthored module behaves anyway.
+- **`MODULES()` in app.js is a function, not a captured array.** Capturing it at
+  boot would freeze it empty now that content arrives lazily.
+
+> ⚠️ **`catalog.js` is generated.** After editing a module's title, tagline,
+> level or duration — or adding/removing a module — run:
+> ```
+> node tools/build-catalog.mjs
+> ```
+> This is a maintenance command, not a build step; deploying never needs it. If
+> it drifts, the journey shows a stale title while the module page shows the
+> correct one.
 
 **Load order matters.** `engine.js` must load before `terminal.js`; both before `app.js`.
 Content files must load before `app.js`. If you add a file, add its `<script>` tag to `index.html`.
@@ -55,7 +129,12 @@ Content files must load before `app.js`. If you add a file, add its `<script>` t
 
 | Global | Set by | Contains |
 |---|---|---|
-| `window.COURSE` | `modules-*.js` | Array of module objects (each file `.concat()`s onto it) |
+| `window.CATALOG` | `catalog.js` | Metadata for every module. EAGER. |
+| `window.COURSE` | `modules/mN.js` | Loaded module objects. Grows as modules are fetched. |
+| `window.LESSONS` | `lessons/lN.js` | Lesson breakdown, keyed by module id. |
+| `window.TRACKS` | `tracks.js` | Track definitions and their stages |
+| `window.Content` | `loader.js` | `loadModule`, `loadTrack`, `meta`, `isModuleLoaded` |
+| `window.Path` | `progress-engine.js` | Track gating and step state |
 | `window.DRILLS` | `drills.js` | Array of drill definitions |
 | `window.ROSTER` | `roster.js` | Cohort name, instructor code, student seats |
 | `window.FX` | `engine.js` | `Feed`, `Account`, `RiskGuard`, `INSTRUMENTS`, `pipValue` |
@@ -70,8 +149,13 @@ Hash-based, so it works on any static host with no server rewrites.
 
 | Route | View |
 |---|---|
-| `#/` | Home — Trading Floor promo + module grid |
-| `#/m/:id` | Module (tabs: `slides`, `lesson`, `quiz`, `notes`) |
+| `#/` | Student: their gated path. Instructor: cohort dashboard. |
+| `#/m/:id` | Module. Students get the lesson list; instructors get the deck. |
+| `#/m/:id/lesson/:n` | A single lesson: read pages, then its check |
+| `#/certificate[/:track]` | Certificate for a track (forex if omitted) |
+| `#/demo` | Supervised demo-trading log |
+| `#/calculators` | The sixteen trader calculators |
+| `#/library` | All modules (instructor) |
 | `#/m/:id/lesson` | Deep link straight to a practical lab |
 | `#/drills` | Trading Floor index |
 | `#/drill/:id` | A drill's terminal. `#/drill/free` = unassessed practice |
@@ -158,8 +242,15 @@ records that you ignored it) → `off` (exam conditions). Every block is logged 
 
 ### A module
 
-Append an object to any `content/modules-*.js`. Home page, glossary, course plan and navigation
-pick it up automatically — nothing else to register.
+Create `content/modules/mN.js` with the shape below, add a matching step to the right track in
+`content/tracks.js` (or `content/path.js` for forex), then regenerate the catalogue:
+
+```
+node tools/build-catalog.mjs
+```
+
+The loader finds `content/modules/mN.js` and `content/lessons/lN.js` by id — there is no manifest
+to update. Module ids: 1–12 forex, 101–108 equities, 201–206 bonds.
 
 ```js
 {
