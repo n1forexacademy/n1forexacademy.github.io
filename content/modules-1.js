@@ -101,6 +101,8 @@ window.COURSE = (window.COURSE || []).concat([
     {
       kicker: "Module 1 · Mechanics",
       title: "Bid, ask and the cost of entry",
+      illus: 'marketWatch',
+      illusCap: "Market Watch on the academy terminal. Note the spread column — and that gold is 18x EUR/USD.",
       bullets: [
         "**Bid** — what the broker will buy from you at. **Ask** (or offer) — what they will sell to you at.",
         "The gap between them is the **spread**, and it is your first cost on every single trade.",
@@ -364,6 +366,8 @@ window.COURSE = (window.COURSE || []).concat([
     {
       kicker: "Module 2 · Position size",
       title: "Lots: the size of the bet",
+      illus: 'orderTicket',
+      illusCap: "The order ticket you will use on every drill. Volume is computed, never chosen.",
       bullets: [
         "**Standard lot** = 100,000 units of base currency. Volume field reads `1.00`.",
         "**Mini lot** = 10,000 units. Volume `0.10`.",
@@ -638,6 +642,8 @@ window.COURSE = (window.COURSE || []).concat([
     {
       kicker: "Module 3 · Margin",
       title: "The four numbers on your account panel",
+      illus: 'accountPanel',
+      illusCap: "The live account panel. Equity is the number that matters, not balance.",
       bullets: [
         "**Balance** — closed-trade cash. Does not move while a trade is open.",
         "**Equity** — balance ± floating P&L. **This is your real account value.**",
@@ -663,6 +669,8 @@ window.COURSE = (window.COURSE || []).concat([
     {
       kicker: "Module 3 · Danger",
       title: "The stop-out sequence",
+      illus: 'marginLadder',
+      illusCap: "Margin level is the figure the broker acts on. You will watch this fall for real in Drill 2.",
       bullets: [
         "**Margin level falls below the call level** (commonly 100%) — the platform flags a warning. You may not see it.",
         "**No one telephones you.** The term 'margin call' is a historical fossil.",

@@ -117,6 +117,15 @@
         '</div>' +
         currentCard +
       '</div>' +
+      (window.ILLUS
+        ? '<div class="plat-card">' +
+            '<h3>The platform you will train on</h3>' +
+            '<p>Every practical drill runs on this terminal. It behaves like a real account — spread, commission, ' +
+            'swap, margin, and a broker that closes you out at 50% margin level — but nothing here is real money and ' +
+            'no broker is involved. What the slides show is what you will actually click.</p>' +
+            window.ILLUS.terminalOverview +
+          '</div>'
+        : '') +
       '<div class="jstages">' + stagesHtml + '</div>' +
       '<div class="panel jfoot">' +
         '<h3>Struggling with a step?</h3>' +

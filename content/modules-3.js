@@ -308,6 +308,8 @@ window.COURSE = (window.COURSE || []).concat([
     {
       kicker: "Module 10 · Foundation",
       title: "The order of operations",
+      illus: 'riskBlock',
+      illusCap: "The risk guard on the academy terminal. Early on it blocks you and shows the correct size.",
       bullets: [
         "**Wrong:** decide a lot size, place a trade, put a stop somewhere convenient.",
         "**Right:** find the level → **place the stop where the idea is wrong** → decide the risk percentage → **calculate the lot size**.",
@@ -320,6 +322,8 @@ window.COURSE = (window.COURSE || []).concat([
     {
       kicker: "Module 10 · The formula",
       title: "The calculation, in full",
+      illus: 'orderTicket',
+      illusCap: "Set the stop first, then press 'Size it' — but only after working the number out yourself.",
       bullets: [
         "**Lots = (Equity × Risk%) ÷ (Stop in pips × Pip value per lot)**",
         "Example: $5,000 account, 1% risk, EUR/USD, 35-pip stop.",

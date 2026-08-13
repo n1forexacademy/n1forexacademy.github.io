@@ -322,6 +322,10 @@
           '<h2>' + esc(s.title) + '</h2>' +
           (s.bullets ? '<ul>' + s.bullets.map(function (b) { return '<li>' + md(b) + '</li>'; }).join('') + '</ul>' : '') +
           (s.body ? '<div>' + md(s.body) + '</div>' : '') +
+          (s.illus && window.ILLUS && window.ILLUS[s.illus]
+            ? '<div class="slide-visual">' + window.ILLUS[s.illus] +
+              (s.illusCap ? '<p class="illus-cap">' + esc(s.illusCap) + '</p>' : '') + '</div>'
+            : '') +
           (s.visual ? '<div class="slide-visual">' + s.visual + '</div>' : '') +
         '</div>' +
         (deckState.notes && s.note ? '<div class="notes"><b>Instructor note.</b> ' + md(s.note) + '</div>' : '');

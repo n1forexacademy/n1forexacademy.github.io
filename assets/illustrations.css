@@ -1,0 +1,77 @@
+/* N1 Forex Academy — styling for the platform illustrations.
+   Everything is driven by the same custom properties as the real terminal, so
+   the drawings match what the student sees and follow light/dark automatically. */
+
+.ui-fig{width:100%;height:auto;max-width:660px;margin:0 auto;display:block}
+
+/* panels and chrome */
+.ui-fig .ui-panel{fill:var(--term-panel);stroke:var(--term-line);stroke-width:1}
+.ui-fig .ui-panel-sq{fill:var(--surface);stroke:var(--line);stroke-width:1}
+.ui-fig .ui-head{fill:var(--term-bg);stroke:none}
+.ui-fig .ui-line{stroke:var(--term-line);stroke-width:1}
+.ui-fig .ui-input{fill:var(--term-bg);stroke:var(--term-line);stroke-width:1}
+.ui-fig .ui-track{fill:var(--term-bg);stroke:var(--term-line);stroke-width:1}
+.ui-fig .ui-ghost{fill:none;stroke:var(--accent);stroke-width:1.2}
+
+/* text */
+.ui-fig text{font-family:var(--sans);fill:var(--ink-2)}
+.ui-fig .ui-kicker{font-size:7px;font-weight:700;letter-spacing:.09em;fill:var(--ink-3)}
+.ui-fig .ui-kicker.ui-bull{fill:var(--bull)}
+.ui-fig .ui-lbl{font-size:9px;fill:var(--ink-3)}
+.ui-fig .ui-val{font-size:9.5px;font-family:var(--mono);fill:var(--ink);font-weight:600}
+.ui-fig .ui-tiny{font-size:7.5px;fill:var(--ink-3)}
+.ui-fig .ui-note{font-size:8.5px;fill:var(--ink-2)}
+.ui-fig .ui-note.ui-strong,.ui-fig .ui-strong{font-weight:700;fill:var(--ink)}
+.ui-fig .ui-title{font-size:11px;font-weight:700;fill:var(--ink)}
+.ui-fig .ui-tag{font-size:8px;font-weight:700;fill:#fff}
+.ui-fig .ui-btn-t{font-size:9px;font-weight:700;fill:#fff}
+.ui-fig .ui-btn-s{font-size:7px;font-family:var(--mono);fill:#fff;opacity:.9}
+.ui-fig .ui-accent-t{font-size:8.5px;font-weight:700;fill:var(--accent)}
+.ui-fig .ui-modal-h{font-size:11px;font-weight:700;fill:#fff}
+.ui-fig .ui-modal-t{font-size:11px;font-weight:700;fill:var(--ink)}
+.ui-fig .ui-modal-b{font-size:9.5px;fill:var(--ink-2)}
+
+/* semantic colour */
+.ui-fig .ui-bull{fill:var(--bull)}
+.ui-fig .ui-bear{fill:var(--bear)}
+.ui-fig .ui-warn{fill:var(--warn)}
+.ui-fig .ui-accent{fill:var(--accent)}
+
+/* solid fills */
+.ui-fig .ui-buy{fill:var(--bull)}
+.ui-fig .ui-sell{fill:var(--bear)}
+.ui-fig .ui-bull-solid{fill:var(--bull)}
+.ui-fig .ui-bear-solid{fill:var(--bear)}
+.ui-fig .ui-accent-solid{fill:var(--accent)}
+.ui-fig .ui-neutral-solid{fill:var(--ink-3)}
+.ui-fig .ui-warn-bg{fill:color-mix(in srgb,var(--warn) 18%,var(--term-panel))}
+.ui-fig .ui-bear-bg{fill:color-mix(in srgb,var(--bear) 20%,var(--term-panel))}
+
+/* candles */
+.ui-fig .ui-bull-s{stroke:var(--bull);stroke-width:1.4}
+.ui-fig .ui-bull-f{fill:var(--bull)}
+.ui-fig .ui-bear-s{stroke:var(--bear);stroke-width:1.4}
+.ui-fig .ui-bear-f{fill:var(--bear)}
+
+/* level lines */
+.ui-fig .ui-dash{stroke:var(--ink-3);stroke-dasharray:4 3;stroke-width:1.1;fill:none}
+.ui-fig .ui-dash-bull{stroke:var(--bull);stroke-dasharray:4 3;stroke-width:1.1;fill:none}
+.ui-fig .ui-dash-bear{stroke:var(--bear);stroke-dasharray:4 3;stroke-width:1.1;fill:none}
+
+/* annotation leaders */
+.ui-fig .ui-call{stroke:var(--accent);stroke-width:1;fill:none;opacity:.65}
+.ui-fig .ui-dot{fill:var(--accent)}
+
+/* caption under an illustration in a slide */
+.illus-cap{
+  text-align:center;font-size:.78rem;color:var(--ink-3);
+  margin-top:.5rem;max-width:60ch;margin-left:auto;margin-right:auto;
+}
+
+/* the "platform you will use" block on the journey */
+.plat-card{
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:1.2rem 1.3rem;box-shadow:var(--shadow);margin-top:1.6rem;
+}
+.plat-card h3{margin:0 0 .3rem;font-size:1.05rem}
+.plat-card > p{font-size:.9rem;color:var(--ink-2);max-width:72ch}

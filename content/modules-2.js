@@ -900,6 +900,8 @@ window.COURSE = (window.COURSE || []).concat([
     {
       kicker: "Module 8 · Volatility",
       title: "ATR — the most underused indicator in retail trading",
+      illus: 'riskPanel',
+      illusCap: "The Risk panel reads ATR for you and shows the 2x ATR stop distance in pips.",
       bullets: [
         "**ATR is the average size of recent candles**, including gaps. Pure volatility, no direction.",
         "**This is how you stop using fixed pip stops.** A 20-pip stop is enormous on EUR/USD in Tokyo and trivial on gold at the NY open.",
