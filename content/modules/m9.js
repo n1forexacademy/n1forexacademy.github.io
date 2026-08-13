@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "90 min",
 
   objectives: [
-    "Explain how interest rates and rate expectations drive currency value",
-    "Identify the high-impact releases and know roughly when each occurs",
-    "Read an economic calendar and interpret actual, forecast and previous",
-    "Explain why price often moves opposite to a 'good' number",
-    "Apply a written news policy rather than improvising during a release"
+    "Explain why interest rates, and expectations about them, drive a currency more than anything else",
+    "Know which few releases actually matter for what you trade, and roughly when they land",
+    "Read an economic calendar, and understand why the forecast is already in the price",
+    "Explain why a genuinely good number often sends a currency down",
+    "Follow a news policy you wrote in advance, instead of improvising with a position open"
   ],
 
   misconceptions: [

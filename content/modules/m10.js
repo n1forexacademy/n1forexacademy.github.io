@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "150 min",
 
   objectives: [
-    "Calculate correct position size from account, risk percentage and stop distance, every time",
-    "Place stops at structural levels rather than at arbitrary pip distances",
-    "Explain expectancy and compute it for a set of trades",
-    "Model the effect of a losing streak and explain why survival dominates returns",
-    "Write and commit to a complete personal risk policy"
+    "Work out the right position size every single time, from your account, your risk and your stop",
+    "Put stops where the trade idea is proven wrong, rather than at a convenient number",
+    "Work out whether a set of trades actually makes money, and why win rate alone cannot tell you",
+    "Understand what a losing streak does to an account, and why staying in beats chasing returns",
+    "Write a complete risk policy of your own, and commit to it"
   ],
 
   misconceptions: [
