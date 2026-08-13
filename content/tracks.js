@@ -37,6 +37,7 @@ window.TRACKS = [
         steps: [
           { id: 'm101', type: 'module', ref: 101, pass: 80 },
           { id: 'm102', type: 'module', ref: 102, pass: 80 },
+          { id: 'd-eq-book', type: 'drill', ref: 'eq-book' },
           { id: 'm103', type: 'module', ref: 103, pass: 80 }
         ]
       },
@@ -46,8 +47,10 @@ window.TRACKS = [
         blurb: 'The published numbers, the events that move them, and what moves together.',
         steps: [
           { id: 'm104', type: 'module', ref: 104, pass: 80 },
+          { id: 'd-eq-compare', type: 'drill', ref: 'eq-compare' },
           { id: 'm105', type: 'module', ref: 105, pass: 80 },
-          { id: 'm106', type: 'module', ref: 106, pass: 80 }
+          { id: 'm106', type: 'module', ref: 106, pass: 80 },
+          { id: 'd-eq-exposure', type: 'drill', ref: 'eq-exposure' }
         ]
       },
       {
@@ -56,6 +59,7 @@ window.TRACKS = [
         blurb: 'Position sizing where gaps are routine, and a written equity process reviewed by an instructor.',
         steps: [
           { id: 'm107', type: 'module', ref: 107, pass: 85 },
+          { id: 'd-eq-gap', type: 'drill', ref: 'eq-gap' },
           { id: 'm108', type: 'module', ref: 108, pass: 80 },
           { id: 'g-equity-plan', type: 'gate', title: 'Submit your written equity plan',
             detail: 'Hand your instructor the Equity Plan from Lab 108. They will check the screen order starts with ' +
@@ -85,7 +89,8 @@ window.TRACKS = [
         blurb: 'What a bond is, and the inverse relationship that surprises everyone.',
         steps: [
           { id: 'm201', type: 'module', ref: 201, pass: 80 },
-          { id: 'm202', type: 'module', ref: 202, pass: 85 }
+          { id: 'm202', type: 'module', ref: 202, pass: 85 },
+          { id: 'd-bd-inverse', type: 'drill', ref: 'bd-inverse' }
         ]
       },
       {
@@ -94,6 +99,7 @@ window.TRACKS = [
         blurb: 'Rate sensitivity and credit — the two ways a bond loses money.',
         steps: [
           { id: 'm203', type: 'module', ref: 203, pass: 80 },
+          { id: 'd-bd-duration', type: 'drill', ref: 'bd-duration' },
           { id: 'm204', type: 'module', ref: 204, pass: 80 }
         ]
       },
@@ -103,6 +109,7 @@ window.TRACKS = [
         blurb: 'The yield curve, and how one central bank decision moves all three markets.',
         steps: [
           { id: 'm205', type: 'module', ref: 205, pass: 80 },
+          { id: 'd-bd-curve', type: 'drill', ref: 'bd-curve' },
           { id: 'm206', type: 'module', ref: 206, pass: 80 },
           { id: 'g-crossmarket', type: 'gate', title: 'Submit your cross-market study',
             detail: 'The capstone from Lab 206. Your instructor checks that you established what was priced before the ' +

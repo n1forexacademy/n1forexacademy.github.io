@@ -1,0 +1,85 @@
+/* N1 Forex Academy — analysis labs (assets/labs.js).
+
+   Deliberately small. Labs reuse the existing .panel, .q, .explain, .callout,
+   .table-wrap and .lsn-nav rules so a lab feels like the rest of the course;
+   the only new work here is the data blocks a lab reasons about and the three
+   answer widgets. All colours come from the existing theme tokens so light and
+   dark both follow automatically. */
+
+.lab .lab-data { margin: 0 0 1.25rem; }
+.lab .lab-data h4 {
+  margin: 0 0 .5rem;
+  font-size: .95rem;
+  letter-spacing: .01em;
+}
+.lab .lab-data table { font-variant-numeric: tabular-nums; }
+.lab .lab-data td.num { text-align: right; }
+.lab .lab-data .muted { margin-top: .5rem; font-size: .9rem; }
+
+/* Order book. Offers sit above bids, the way a depth ladder is displayed. */
+.lab-ladder table { max-width: 30rem; }
+.lab-ladder td.px { text-align: center; font-weight: 600; }
+.lab-ladder tr.ask td.px { color: var(--dn, #c0392b); }
+.lab-ladder tr.bid td.px { color: var(--up, #1e8449); }
+
+/* Tasks -------------------------------------------------------------- */
+
+.lab .lab-task { margin: 1.1rem 0; }
+.lab .lab-q { margin: 0 0 .6rem; font-weight: 600; }
+.lab .lab-hint { margin: .4rem 0 0; font-size: .88rem; font-style: italic; }
+
+/* calc — a single numeric answer, optionally with a unit either side. */
+.lab-calc { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.lab-calc input {
+  width: 11rem;
+  padding: .55rem .7rem;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: inherit;
+  background: var(--bg, transparent);
+  border: 1px solid var(--line, #ccc);
+  border-radius: 8px;
+}
+.lab-calc input:focus-visible { outline: 2px solid var(--acc, #b8860b); outline-offset: 1px; }
+.lab-calc .fix { font-weight: 600; opacity: .85; }
+
+/* sort — one row per item, each with a bucket to choose. */
+.lab-sort { display: grid; gap: .5rem; }
+.lab-sort .lab-row {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+.lab-sort .lab-item { flex: 1 1 14rem; min-width: 0; }
+.lab-sort select {
+  flex: 0 1 15rem;
+  padding: .45rem .6rem;
+  font: inherit;
+  color: inherit;
+  background: var(--bg, transparent);
+  border: 1px solid var(--line, #ccc);
+  border-radius: 8px;
+}
+.lab-sort select:focus-visible { outline: 2px solid var(--acc, #b8860b); outline-offset: 1px; }
+
+/* Marking. Matches the correct/wrong treatment used on lesson checks, and
+   never relies on colour alone — a marked field also gains a weight change. */
+.lab input.correct,
+.lab select.correct {
+  border-color: var(--up, #1e8449);
+  box-shadow: inset 0 0 0 1px var(--up, #1e8449);
+  font-weight: 600;
+}
+.lab input.wrong,
+.lab select.wrong {
+  border-color: var(--dn, #c0392b);
+  box-shadow: inset 0 0 0 1px var(--dn, #c0392b);
+  font-weight: 600;
+}
+
+@media (max-width: 560px) {
+  .lab-calc input { width: 100%; }
+  .lab-sort .lab-row { align-items: stretch; }
+  .lab-sort select { flex: 1 1 100%; }
+}

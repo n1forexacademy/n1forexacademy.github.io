@@ -550,33 +550,53 @@
     var prog = Auth.progress() || { drills: {} };
     var done = Object.keys(prog.drills || {}).filter(function (k) { return prog.drills[k].passed; }).length;
 
-    var cards = drills.map(function (d) {
+    function card(d) {
       var passed = prog.drills && prog.drills[d.id] && prog.drills[d.id].passed;
       return '<a class="card drill-card' + (passed ? ' done' : '') + '" href="#/drill/' + d.id + '">' +
-        '<span class="num">Drill ' + (passed ? '· <span class="tick">passed ✓</span>' : '· Module ' + d.module) + '</span>' +
+        '<span class="num">' + (Labs.isLab(d) ? 'Lab' : 'Drill') + ' ' +
+          (passed ? '· <span class="tick">passed ✓</span>' : '· Module ' + d.module) + '</span>' +
         '<h3>' + esc(d.title) + '</h3>' +
         '<p>' + esc(d.brief) + '</p>' +
         '<div class="chips">' +
-          '<span class="chip">' + esc(FX.INSTRUMENTS[d.instrument].name) + '</span>' +
-          '<span class="chip">Risk guard: ' +
-            (d.policy.mode === 'guard' ? 'enforced' : d.policy.mode === 'advise' ? 'advisory' : 'off') +
-          '</span>' +
+          // Analysis labs have no instrument and no risk policy — they are
+          // worked exercises, not simulator sessions. See assets/labs.js.
+          (Labs.isLab(d)
+            ? '<span class="chip">Worked exercise</span><span class="chip">No simulator</span>'
+            : '<span class="chip">' + esc(FX.INSTRUMENTS[d.instrument].name) + '</span>' +
+              '<span class="chip">Risk guard: ' +
+                (d.policy.mode === 'guard' ? 'enforced' : d.policy.mode === 'advise' ? 'advisory' : 'off') +
+              '</span>') +
         '</div></a>';
-    }).join('');
+    }
+
+    var sim  = drills.filter(function (d) { return !Labs.isLab(d); });
+    var labs = drills.filter(function (d) { return Labs.isLab(d); });
 
     app.innerHTML =
       '<div class="crumb"><a href="#/">Modules</a> / Trading Floor</div>' +
       '<div class="module-head"><h1>Trading Floor</h1>' +
-      '<p class="lede">Seven assessed drills on a simulated market. The risk guard sits between you and the order button — ' +
-      'early on it blocks anything oversized and explains why, then it steps back as you progress, until the final drill ' +
-      'has no rails at all.</p>' +
+      '<p class="lede">Every practical piece of the course, in one place. ' + sim.length + ' assessed drills run on the ' +
+      'simulator; ' + labs.length + ' worked labs cover the equities and bonds tracks, where the decisions are analytical ' +
+      'rather than a session at the order button.</p>' +
       '<div class="chips"><span class="chip">' + done + ' of ' + drills.length + ' passed</span></div></div>' +
+
+      '<div class="section-head"><h2>Simulator drills</h2></div>' +
+      '<p class="muted">The risk guard sits between you and the order button — early on it blocks anything oversized and ' +
+      'explains why, then it steps back as you progress, until the final drill has no rails at all.</p>' +
 
       '<div class="callout warn"><p><b>Everything here is simulated.</b> The price feed is generated, not live, and no broker ' +
       'or real money is involved at any point. The market is deterministic from a seed, so a drill replays identically for ' +
       'you and your instructor — which is what makes it teachable.</p></div>' +
 
-      '<div class="grid">' + cards + '</div>' +
+      '<div class="grid">' + sim.map(card).join('') + '</div>' +
+
+      '<div class="section-head"><h2>Analysis labs</h2></div>' +
+      '<p class="muted">Shares and bonds are not on the simulator, and putting them there would teach the wrong thing — ' +
+      'those tracks turn on judgement rather than execution. These are worked exercises over real-shaped data: walk an ' +
+      'order book, compare two companies, count what you actually own, rank rate sensitivity. Every answer must be right ' +
+      'to pass, retries are unlimited, and the reasoning is shown either way.</p>' +
+
+      '<div class="grid">' + labs.map(card).join('') + '</div>' +
 
       '<div class="section-head"><h2>Free practice</h2></div>' +
       '<div class="panel"><p>No objective, no assessment, all four instruments and the risk guard set to 1% enforced. ' +
@@ -621,9 +641,22 @@
              '<a href="#/drills">All drills →</a></div>' : '');
 
     killTerminal();
+
+    function record(p) {
+      if (p.drill && p.drill !== 'free') Auth.progress({ drill: p.drill, passed: p.passed });
+    }
+
+    // Equities and bonds have no simulator instruments, so their practical work
+    // is a worked exercise rather than a terminal session. Both record into
+    // progress.drills identically, so the path engine cannot tell them apart.
+    if (Labs.isLab(d)) {
+      Labs.mount(document.getElementById('termHost'), d, record);
+      return;
+    }
+
     activeTerminal = new FXTerminal(document.getElementById('termHost'), {
       drill: d.test ? d : Object.assign({}, d, { test: null }),
-      onProgress: function (p) { if (p.drill && p.drill !== 'free') Auth.progress({ drill: p.drill, passed: p.passed }); }
+      onProgress: record
     });
   }
 
