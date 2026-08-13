@@ -10,9 +10,9 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "150 min",
 
   objectives: [
-    "Backtest a plan honestly and recognise the biases that make backtests lie",
-    "Run a structured forward test on demo and interpret the results",
-    "Maintain a journal that produces actionable findings rather than a diary",
+    "Test a plan against history honestly, and spot the habits that make such tests flatter you",
+    "Run a proper demo test going forward, and understand what its results are telling you",
+    "Keep a journal that produces findings you can act on, rather than a diary",
     "Work out which way you personally tend to break under pressure, and build a guard against it",
     "Evaluate expert advisors and automation realistically"
   ],

@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "120 min",
 
   objectives: [
-    "Describe the main strategy archetypes and match them to market conditions",
-    "Write entry, exit and filter rules specific enough to be tested",
-    "Assemble a complete written trading plan",
-    "Explain why a discretionary approach must still be rule-bounded",
-    "Test whether a plan is truly unambiguous by having someone else apply it"
+    "Know the four main ways to trade, and which conditions each one needs",
+    "Write entry, exit and filter rules specific enough that they can actually be tested",
+    "Put together a complete written trading plan that fits on a page or two",
+    "Explain why even a judgement-based approach still needs firm rules around it",
+    "Prove your plan is unambiguous by handing it to someone else and comparing"
   ],
 
   misconceptions: [
