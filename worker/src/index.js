@@ -166,13 +166,28 @@ function mergeProgress(current, patch, allowInstructorFields) {
     p.drills[patch.drill] = { passed: !!(patch.passed || prev.passed), at: Date.now() };
   }
 
-  // Certificate is write-once: the issue date and reference never change.
-  if (patch.certificate && !p.certificate) {
-    p.certificate = {
-      issuedAt: Number(patch.certificate.issuedAt) || Date.now(),
-      id: String(patch.certificate.id || '').slice(0, 40),
-      name: String(patch.certificate.name || '').slice(0, 80)
+  // Certificates are write-once: the issue date and reference never change.
+  // `certificate` (singular) is the forex track, kept for existing records.
+  function sanitiseCert(c) {
+    return {
+      issuedAt: Number(c.issuedAt) || Date.now(),
+      id: String(c.id || '').slice(0, 40),
+      name: String(c.name || '').slice(0, 80),
+      track: String(c.track || '').slice(0, 24),
+      title: String(c.title || '').slice(0, 80)
     };
+  }
+  if (patch.certificate && !p.certificate) {
+    p.certificate = sanitiseCert(patch.certificate);
+  }
+  if (patch.certificates && typeof patch.certificates === 'object') {
+    p.certificates = p.certificates || {};
+    for (const k of Object.keys(patch.certificates).slice(0, 12)) {
+      const key = String(k).slice(0, 24);
+      if (!p.certificates[key] && patch.certificates[k]) {
+        p.certificates[key] = sanitiseCert(patch.certificates[k]);
+      }
+    }
   }
 
   // One row per week; re-submitting a week replaces it rather than duplicating.

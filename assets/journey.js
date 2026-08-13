@@ -32,8 +32,10 @@
       return { kind: 'Instructor check', title: step.title, desc: step.detail || '', href: null, icon: '🖊️' };
     }
     if (step.type === 'cert') {
+      // Each track has its own certificate page.
       return { kind: 'Milestone', title: step.title, desc: 'Your certificate of completion.',
-               href: '#/certificate', icon: '🎓' };
+               href: '#/certificate' + (step.track && step.track !== 'forex' ? '/' + step.track : ''),
+               icon: '🎓' };
     }
     if (step.type === 'demo') {
       return { kind: 'Supervised practice', title: step.title,
@@ -45,9 +47,45 @@
     return { kind: '', title: step.id, desc: '', href: null, icon: '•' };
   }
 
+  /* Which track the student is currently viewing. Defaults to the furthest
+     unlocked one so a returning student lands where they left off. */
+  var viewingTrack = null;
+  function currentTrackId(progress) {
+    var list = Path.tracks(progress);
+    if (viewingTrack && list.some(function (t) { return t.track.id === viewingTrack && t.unlocked; })) {
+      return viewingTrack;
+    }
+    var open = list.filter(function (t) { return t.unlocked && !t.finished; });
+    if (open.length) return open[0].track.id;
+    var unlocked = list.filter(function (t) { return t.unlocked; });
+    return (unlocked[unlocked.length - 1] || list[0]).track.id;
+  }
+  function setTrack(id) { viewingTrack = id; }
+
+  /* The track selector strip. Only shown once more than one track exists. */
+  function trackBar(progress, activeId) {
+    var list = Path.tracks(progress);
+    if (list.length < 2) return '';
+    return '<div class="trackbar">' + list.map(function (t) {
+      var cls = 'tchip' + (t.track.id === activeId ? ' on' : '') +
+                (t.unlocked ? '' : ' locked') + (t.certificate ? ' certified' : '');
+      var sub = t.unlocked
+        ? (t.certificate ? 'Certified' : t.percent + '% complete')
+        : 'Needs the ' + Path.trackById(t.requires).title + ' certificate';
+      return (t.unlocked
+        ? '<button class="' + cls + '" data-track="' + esc(t.track.id) + '">'
+        : '<div class="' + cls + '">') +
+          '<span class="tchip-t">' + esc(t.track.title) + (t.certificate ? ' ✓' : '') + '</span>' +
+          '<span class="tchip-s">' + esc(sub) + '</span>' +
+          (t.unlocked ? '<span class="tchip-bar"><i style="width:' + t.percent + '%"></i></span>' : '') +
+        (t.unlocked ? '</button>' : '</div>');
+    }).join('') + '</div>';
+  }
+
   /* ---------- the journey ---------- */
   function renderJourney(app, progress) {
-    var st = Path.state(progress);
+    var trackId = currentTrackId(progress);
+    var st = Path.state(progress, trackId);
     var session = Auth.session() || {};
     var firstName = String(session.name || '').split(' ')[0] || 'there';
 
@@ -106,10 +144,12 @@
     }).join('');
 
     app.innerHTML =
+      trackBar(progress, trackId) +
       '<div class="jhero">' +
         '<div class="jhero-text">' +
           '<p class="jgreet">Welcome back, ' + esc(firstName) + '</p>' +
-          '<h1>Your training path</h1>' +
+          '<h1>' + esc(st.track.title) + '</h1>' +
+          (st.track.subtitle ? '<p class="jsub">' + esc(st.track.subtitle) + '</p>' : '') +
           '<p class="lede">One step at a time. Nothing opens until the step before it is genuinely done — ' +
           'because the order is the teaching, not a suggestion.</p>' +
           '<div class="jprog"><div class="jprog-bar"><i style="width:' + st.percent + '%"></i></div>' +
@@ -133,11 +173,57 @@
         'they can go through it with you, and if it makes sense they can unlock it manually so you are not blocked. ' +
         'Every override is recorded, so nobody quietly bypasses the risk stages.</p>' +
       '</div>';
+
+    // Track switching.
+    app.querySelectorAll('.tchip[data-track]').forEach(function (b) {
+      b.onclick = function () { setTrack(b.dataset.track); renderJourney(app, Auth.progress()); window.scrollTo(0, 0); };
+    });
+  }
+
+  /* Where a student goes after earning a certificate. Forex leads into the
+     supervised demo period; the later tracks lead into whichever track they
+     have just unlocked, or nowhere if this was the last one. */
+  function certNext(trackId, progress) {
+    if (trackId === 'forex') {
+      return '<a class="btn" href="#/demo">Next: supervised demo trading →</a>';
+    }
+    var next = Path.tracks(progress).filter(function (t) {
+      return t.requires === trackId;
+    })[0];
+    if (next) {
+      return '<button class="btn" data-goto-track="' + esc(next.track.id) + '">' +
+             'Next: ' + esc(next.track.title) + ' →</button>';
+    }
+    return '<a class="btn" href="#/">Back to your path</a>';
+  }
+
+  /* Certificate wording, specific to the track that earned it. */
+  function certBody(trackId, st) {
+    var n = st.steps.filter(function (d) { return d.step.type === 'module'; }).length;
+    if (trackId === 'equities') {
+      return 'has successfully completed the ' + n + '-module <b>Equity Markets</b> programme at N1 Forex Academy — ' +
+        'covering share ownership and market structure, order books and settlement, the distinction between owned ' +
+        'shares and leveraged derivatives, company analysis from published accounts, earnings and corporate actions, ' +
+        'index and sector behaviour, and position sizing without leverage — together with a written equity process ' +
+        'reviewed by an instructor.';
+    }
+    if (trackId === 'bonds') {
+      return 'has successfully completed the ' + n + '-module <b>Fixed Income</b> programme at N1 Forex Academy — ' +
+        'covering bond structure and seniority, the inverse relationship between price and yield, duration and ' +
+        'interest rate risk, credit risk and ratings, the yield curve, and the transmission of monetary policy ' +
+        'across bond, currency and equity markets — together with a cross-market capstone study reviewed by an ' +
+        'instructor.';
+    }
+    return 'has successfully completed the ' + n + '-module <b>Forex Trading</b> programme at N1 Forex Academy — ' +
+      'covering market structure, trade arithmetic, margin mechanics, chart reading, risk management and position ' +
+      'sizing — together with every assessed practical drill on the academy trading simulator and a written trading ' +
+      'plan reviewed by an instructor.';
   }
 
   /* ---------- certificate ---------- */
-  function renderCertificate(app, progress) {
-    var st = Path.state(progress);
+  function renderCertificate(app, progress, trackId) {
+    trackId = trackId || currentTrackId(progress);
+    var st = Path.state(progress, trackId);
     var session = Auth.session() || {};
 
     // Everything before the certificate step must be finished.
@@ -163,13 +249,25 @@
     }
 
     // Issue on first view, then keep the same date and id forever.
-    if (!progress.certificate || !progress.certificate.issuedAt) {
-      var id = 'N1-' + String(session.id || 'student').slice(0, 8).toUpperCase() + '-' +
-               String(Date.now()).slice(-6);
-      Auth.progress({ certificate: { issuedAt: Date.now(), id: id, name: session.name } });
+    // Forex keeps the original singular key; later tracks are keyed by track id.
+    var existing = Path.certOf(progress, trackId);
+    if (!existing || !existing.issuedAt) {
+      var prefix = trackId === 'equities' ? 'EQ' : trackId === 'bonds' ? 'FI' : 'FX';
+      var rec = {
+        issuedAt: Date.now(),
+        id: 'N1-' + prefix + '-' + String(session.id || 'student').slice(0, 6).toUpperCase() +
+            '-' + String(Date.now()).slice(-6),
+        name: session.name,
+        track: trackId,
+        title: st.track.certificateTitle || 'Certificate of Completion'
+      };
+      Auth.progress(trackId === 'forex'
+        ? { certificate: rec }
+        : { certificates: (function () { var o = {}; o[trackId] = rec; return o; })() });
       progress = Auth.progress();
+      existing = Path.certOf(progress, trackId);
     }
-    var cert = progress.certificate;
+    var cert = existing;
     var issued = new Date(cert.issuedAt);
 
     var sig = window.BRAND ? BRAND.signatory : { name: 'Jonathan Afolayan', title: 'Founder & Head of Training' };
@@ -184,13 +282,10 @@
 
             '<div class="cert-head">' + (window.BRAND ? BRAND.lockup(52) : '') + '</div>' +
 
-            '<p class="cert-kicker">Certificate of Completion</p>' +
+            '<p class="cert-kicker">' + esc(cert.title || 'Certificate of Completion') + '</p>' +
             '<p class="cert-presented">This is to certify that</p>' +
             '<h1 class="cert-name">' + esc(cert.name || session.name) + '</h1>' +
-            '<p class="cert-body">has successfully completed the twelve-module <b>N1 Forex Academy</b> programme — ' +
-            'covering market structure, trade arithmetic, margin mechanics, chart reading, risk management and ' +
-            'position sizing — together with every assessed practical drill on the academy trading simulator and a ' +
-            'written trading plan reviewed by an instructor.</p>' +
+            '<p class="cert-body">' + certBody(trackId, st) + '</p>' +
 
             '<div class="cert-sign">' +
               '<div class="cert-sig-block">' +
@@ -219,9 +314,17 @@
         '</div>' +
         '<div class="cert-actions">' +
           '<button class="btn primary" onclick="window.print()">Print / save as PDF</button>' +
-          '<a class="btn" href="#/demo">Next: supervised demo trading →</a>' +
+          certNext(trackId, progress) +
         '</div>' +
       '</div>';
+
+    var goto = app.querySelector('[data-goto-track]');
+    if (goto) goto.onclick = function () {
+      setTrack(goto.dataset.gotoTrack);
+      location.hash = '#/';
+      renderJourney(app, Auth.progress());
+      window.scrollTo(0, 0);
+    };
   }
 
   /* ---------- supervised demo period ---------- */

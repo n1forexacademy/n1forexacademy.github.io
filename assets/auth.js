@@ -141,6 +141,12 @@
         }
         if (patch.drill) cache.drills[patch.drill] = { passed: !!patch.passed, at: Date.now() };
         if (patch.certificate && !cache.certificate) cache.certificate = patch.certificate;
+        if (patch.certificates) {
+          cache.certificates = cache.certificates || {};
+          Object.keys(patch.certificates).forEach(function (k) {
+            if (!cache.certificates[k]) cache.certificates[k] = patch.certificates[k];
+          });
+        }
         if (patch.demoWeek && patch.demoWeek.week) {
           var w = patch.demoWeek;
           if (+w.followed > +w.trades) w.followed = w.trades;

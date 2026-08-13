@@ -656,7 +656,7 @@
     if (parts[0] === 'm' && parts[1]) viewModule(+parts[1], parts[2]);
     else if (parts[0] === 'drills') viewDrills();
     else if (parts[0] === 'drill' && parts[1]) viewDrill(parts[1]);
-    else if (parts[0] === 'certificate') Journey.certificate(app, Auth.progress());
+    else if (parts[0] === 'certificate') Journey.certificate(app, Auth.progress(), parts[1]);
     else if (parts[0] === 'demo') Journey.demo(app, Auth.progress());
     else if (parts[0] === 'library') viewHome();
     else if (parts[0] === 'plan') viewPlan();

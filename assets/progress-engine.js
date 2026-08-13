@@ -248,6 +248,13 @@
   }
 
   window.Path = {
+    tracks: tracks,
+    trackById: trackById,
+    trackList: trackList,
+    trackOfModule: trackOfModule,
+    trackUnlocked: trackUnlocked,
+    certOf: certOf,
+    defaultTrackId: defaultTrackId,
     flatSteps: flatSteps,
     state: state,
     stepComplete: stepComplete,

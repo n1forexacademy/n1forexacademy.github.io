@@ -1,0 +1,32 @@
+/* N1 Forex Academy — track selector. */
+
+.trackbar{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:.6rem;margin-bottom:1.6rem;
+}
+.tchip{
+  appearance:none;text-align:left;font:inherit;cursor:pointer;
+  background:var(--surface);border:1px solid var(--line);border-radius:13px;
+  padding:.8rem .95rem;color:var(--ink);box-shadow:var(--shadow);
+  display:flex;flex-direction:column;gap:.2rem;transition:border-color .15s ease,transform .15s ease;
+}
+button.tchip:hover{border-color:var(--gold);transform:translateY(-1px)}
+.tchip.on{border-color:var(--accent);border-width:2px;padding:calc(.8rem - 1px) calc(.95rem - 1px)}
+.tchip.certified{border-color:var(--gold)}
+.tchip.locked{opacity:.5;cursor:default;background:var(--surface-2)}
+
+.tchip-t{font-size:.95rem;font-weight:700;line-height:1.2}
+.tchip.certified .tchip-t{color:var(--gold)}
+.tchip-s{font-size:.74rem;color:var(--ink-3)}
+.tchip-bar{
+  display:block;height:4px;border-radius:99px;background:var(--surface-2);
+  border:1px solid var(--line);overflow:hidden;margin-top:.35rem;
+}
+.tchip-bar i{display:block;height:100%;background:var(--accent)}
+.tchip.certified .tchip-bar i{background:var(--gold)}
+
+.jsub{font-size:.9rem;color:var(--ink-3);margin:-.2rem 0 .6rem}
+
+@media (max-width:560px){
+  .trackbar{grid-template-columns:1fr}
+}
