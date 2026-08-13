@@ -342,7 +342,18 @@
   /* ---------- main loop ---------- */
   Terminal.prototype.loop = function (ts) {
     if (this.dead || !document.body.contains(this.root)) return;
-    var dt = this.lastFrame ? (ts - this.lastFrame) : 16;
+
+    // A hidden tab still fires rAF in some hosts, and at 20x speed each frame
+    // can advance 120 ticks across four feeds. Idle instead of burning CPU in
+    // the background — and drop the accumulator so returning does not stampede.
+    if (document.hidden) {
+      this.lastFrame = 0;
+      this.accum = 0;
+      requestAnimationFrame(this.loop);
+      return;
+    }
+
+    var dt = this.lastFrame ? Math.min(ts - this.lastFrame, 250) : 16;
     this.lastFrame = ts;
 
     if (this.speed > 0) {

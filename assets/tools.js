@@ -165,8 +165,15 @@
       { k: 'trades', label: 'Trades simulated', type: 'number', value: 200, step: 50 }
     ],
     compute: function (v) {
-      var sims = 4000, p = v.win / 100, f = v.risk / 100, floor = 1 - v.ruin / 100;
-      var n = Math.max(10, Math.min(2000, v.trades | 0));
+      // Fixed work budget. Previously this was 4,000 sims x up to 2,000 trades
+      // = 8 million iterations, run synchronously on every keystroke, which is
+      // enough to freeze the browser tab. Total iterations are now capped at
+      // ~250k regardless of inputs; that is still ample for a percentage
+      // estimate and completes in a few milliseconds.
+      var ITER_BUDGET = 250000;
+      var p = v.win / 100, f = v.risk / 100, floor = 1 - v.ruin / 100;
+      var n = Math.max(10, Math.min(500, v.trades | 0));
+      var sims = Math.max(400, Math.min(3000, Math.floor(ITER_BUDGET / n)));
       var ruined = 0, worstSum = 0, endSum = 0;
       for (var s = 0; s < sims; s++) {
         var eq = 1, peak = 1, worst = 0, dead = false;
@@ -191,7 +198,7 @@
         { label: 'Expectancy per trade', value: num(exp) + ' R',
           cls: exp > 0 ? 'good' : 'bad',
           note: exp <= 0 ? 'negative edge — ruin is a matter of time, not chance' : '' },
-        { label: 'Method', value: '4,000 simulated runs of ' + n + ' trades',
+        { label: 'Method', value: sims.toLocaleString() + ' simulated runs of ' + n + ' trades',
           note: 'results shift slightly each time — that variance is the lesson' }
       ];
     }
@@ -588,12 +595,21 @@
         'idea — it checks your arithmetic, not your reasoning.</p></div>' +
       '</div>';
 
+    // Debounce so a burst of keystrokes triggers one recompute, not one per
+    // character. Without this, holding a key on a heavier calculator queues
+    // enough synchronous work to lock the page.
+    var timers = {};
+    function queue(c) {
+      clearTimeout(timers[c.id]);
+      timers[c.id] = setTimeout(function () { recompute(c); }, 160);
+    }
+
     CALCS.forEach(function (c) {
       c.fields.forEach(function (f) {
         var el = document.getElementById('f_' + c.id + '_' + f.k);
         if (el) {
-          el.addEventListener('input', function () { recompute(c); });
-          el.addEventListener('change', function () { recompute(c); });
+          el.addEventListener('input', function () { queue(c); });
+          el.addEventListener('change', function () { queue(c); });
         }
       });
       recompute(c);
