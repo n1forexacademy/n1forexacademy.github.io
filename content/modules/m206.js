@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "120 min",
 
   objectives: [
-    "Trace how a central bank decision transmits through bonds to currencies and equities",
-    "Explain the carry trade in terms of rate differentials and its real risks",
-    "Describe how rates affect equity valuations",
-    "Use cross-market signals as context without treating them as predictions",
-    "Decide where your own effort is best spent across the three asset classes"
+    "Follow one central bank decision all the way through bonds, currencies and shares",
+    "Explain what a carry trade really is, and the shape of loss that ends people who run it",
+    "Explain why rising rates hurt fast-growing companies most",
+    "Read several markets together for context, without mistaking it for prediction",
+    "Decide where your own effort is best spent across the three markets"
   ],
 
   misconceptions: [

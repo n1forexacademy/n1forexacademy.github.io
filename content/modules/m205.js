@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "90 min",
 
   objectives: [
-    "Read a yield curve and describe its shape",
-    "Explain what normal, flat and inverted curves have historically signalled",
-    "Distinguish a curve steepening from a parallel shift",
-    "Explain the term premium in plain language",
-    "Use the curve as context for both bond and currency positioning"
+    "Read a yield curve and describe what its shape is telling you",
+    "Explain what an upside-down curve has historically meant, and its real caveats",
+    "Ask the right question when someone says the curve steepened — which end moved",
+    "Explain in plain words why lending for longer normally pays more",
+    "Use the curve to read rate expectations before they show up in your currency pairs"
   ],
 
   misconceptions: [

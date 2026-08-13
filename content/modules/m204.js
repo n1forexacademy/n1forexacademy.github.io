@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "90 min",
 
   objectives: [
-    "Explain what a credit spread represents and what widens it",
-    "Interpret rating categories without treating them as guarantees",
-    "Distinguish investment grade from high yield and describe how each behaves",
-    "Explain why credit spreads and equities tend to move together",
-    "State honestly what ratings do and do not tell you"
+    "Explain what the extra yield on a company's bond is actually paying for",
+    "Read a credit rating for what it is — an opinion, usually updated late",
+    "Explain why the two tiers of bond barely behave like the same thing",
+    "Understand why high yield bonds fall with shares, exactly when you wanted protection",
+    "Use credit spreads as an early warning, even if you never buy a bond"
   ],
 
   misconceptions: [
