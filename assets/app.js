@@ -1,0 +1,463 @@
+/* Forex Trading Academy — hash-router + slide engine.
+   Content lives in content/modules-*.js which push onto window.COURSE. */
+(function () {
+  'use strict';
+
+  var MODULES = (window.COURSE || []).slice().sort(function (a, b) { return a.id - b.id; });
+  var app = document.getElementById('app');
+
+  /* ---------- helpers ---------- */
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  // Content is authored by us, so a small inline markup dialect is safe here.
+  function md(s) {
+    return esc(s)
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`(.+?)`/g, '<code>$1</code>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>');
+  }
+  function el(html) {
+    var t = document.createElement('template');
+    t.innerHTML = html.trim();
+    return t.content.firstElementChild;
+  }
+  function lvlClass(l) {
+    return l === 'Foundation' ? 'lvl-1' : l === 'Core skill' ? 'lvl-2' : 'lvl-3';
+  }
+
+  /* ---------- home ---------- */
+  function viewHome() {
+    var totalSlides = MODULES.reduce(function (n, m) { return n + m.slides.length; }, 0);
+    var totalLabs = MODULES.filter(function (m) { return m.practical; }).length;
+
+    var cards = MODULES.map(function (m) {
+      return '<a class="card" href="#/m/' + m.id + '">' +
+        '<span class="num">Module ' + m.id + '</span>' +
+        '<h3>' + esc(m.title) + '</h3>' +
+        '<p>' + esc(m.tagline) + '</p>' +
+        '<div class="chips">' +
+          '<span class="chip ' + lvlClass(m.level) + '">' + esc(m.level) + '</span>' +
+          '<span class="chip">' + m.slides.length + ' slides</span>' +
+          '<span class="chip">' + esc(m.duration) + '</span>' +
+        '</div></a>';
+    }).join('');
+
+    app.innerHTML =
+      '<section class="hero">' +
+        '<h1>N1 Forex Academy</h1>' +
+        '<p class="lede">A complete 12-module teaching kit: presenter slides with instructor notes, a hands-on practical lab for every module, quizzes with answer explanations, and a glossary. Built to be taught, not just read.</p>' +
+        '<div class="stat-row">' +
+          '<div class="stat"><b>' + MODULES.length + '</b>modules</div>' +
+          '<div class="stat"><b>' + totalSlides + '</b>slides</div>' +
+          '<div class="stat"><b>' + totalLabs + '</b>practical labs</div>' +
+          '<div class="stat"><b>~24h</b>contact time</div>' +
+        '</div>' +
+      '</section>' +
+      '<div class="section-head"><h2>Curriculum</h2>' +
+        '<span class="muted">Teach in order — each module assumes the one before it.</span></div>' +
+      '<div class="grid">' + cards + '</div>' +
+      '<div class="section-head"><h2>How to run a session</h2></div>' +
+      '<div class="panel">' +
+        '<ol class="steps">' +
+          '<li><h4>Open the module and hit <em>Present</em></h4><p>The deck goes fullscreen-style. Arrow keys or Space move between slides. Press <code>N</code> to show or hide your instructor notes — the student never needs to see them, so mirror your screen rather than duplicating if you want them hidden.</p></li>' +
+          '<li><h4>Teach the slides (~35–45 min)</h4><p>Stop at every slide that has a "Ask the room" note. The deck is deliberately light on text so you do the explaining.</p></li>' +
+          '<li><h4>Switch to the Practical Lab (~40–60 min)</h4><p>The student works on a live MT4/MT5 or TradingView chart while you supervise. Every lab ends in a concrete deliverable you can mark.</p></li>' +
+          '<li><h4>Close with the quiz (~10 min)</h4><p>Answers reveal on submit with an explanation of why each option is right or wrong. Anything below 80% means re-teach that slide before moving on.</p></li>' +
+          '<li><h4>Set the homework</h4><p>Each module ends with between-session work — usually demo trades or journal entries. Review it at the start of the next session.</p></li>' +
+        '</ol>' +
+      '</div>';
+  }
+
+  /* ---------- course plan ---------- */
+  function viewPlan() {
+    var rows = MODULES.map(function (m) {
+      return '<tr><td><b>' + m.id + '</b></td><td><a href="#/m/' + m.id + '">' + esc(m.title) + '</a></td>' +
+        '<td>' + esc(m.level) + '</td><td>' + esc(m.duration) + '</td>' +
+        '<td>' + esc(m.practical ? m.practical.deliverable : '—') + '</td></tr>';
+    }).join('');
+
+    app.innerHTML =
+      '<div class="crumb"><a href="#/">Modules</a> / Course plan</div>' +
+      '<div class="module-head"><h1>Course Plan</h1>' +
+      '<p class="lede">Twelve sessions of roughly two hours each. The suggested cadence is two sessions a week over six weeks, with demo trading between every session.</p></div>' +
+
+      '<div class="panel">' +
+        '<h2>Entry requirements</h2>' +
+        '<ul class="tight">' +
+          '<li>A laptop or desktop — phone-only students cannot complete the charting labs.</li>' +
+          '<li>A free MT4 or MT5 demo account, plus a free TradingView account.</li>' +
+          '<li>A spreadsheet app for the trading journal and position-size calculator labs.</li>' +
+          '<li>No prior trading experience required. Basic arithmetic and percentages are assumed.</li>' +
+        '</ul>' +
+
+        '<h3>Phases</h3>' +
+        '<div class="kv">' +
+          '<dt>Modules 1–4</dt><dd><b>Foundation.</b> What the market is, how a trade is actually priced and executed, and how to set up an account safely. No strategy yet — mechanics only.</dd>' +
+          '<dt>Modules 5–8</dt><dd><b>Reading the chart.</b> Sessions and timing, candlesticks, market structure, levels, and indicators. The student learns to describe a chart out loud before ever placing a trade on it.</dd>' +
+          '<dt>Modules 9–10</dt><dd><b>Risk and context.</b> Fundamentals and news, then the single most important module in the course: risk management and position sizing.</dd>' +
+          '<dt>Modules 11–12</dt><dd><b>Systemising.</b> Turning observations into a written, testable strategy, then backtesting, journaling, psychology and automation.</dd>' +
+        '</div>' +
+
+        '<div class="callout warn"><p><b>Non-negotiable rule for this course:</b> the student stays on demo until they have completed Module 10 <em>and</em> logged 30 journaled demo trades with a written plan. Teaching risk after someone has already lost real money is teaching it too late.</p></div>' +
+
+        '<h3>Session-by-session</h3>' +
+        '<div class="table-wrap"><table><thead><tr><th>#</th><th>Module</th><th>Level</th><th>Length</th><th>Lab deliverable</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+
+        '<h3>Assessment weighting</h3>' +
+        '<div class="table-wrap"><table><thead><tr><th>Component</th><th>Weight</th><th>Pass mark</th></tr></thead><tbody>' +
+          '<tr><td>Module quizzes (12)</td><td>20%</td><td>80% average</td></tr>' +
+          '<tr><td>Practical lab deliverables (12)</td><td>40%</td><td>All submitted, 10 of 12 rated competent</td></tr>' +
+          '<tr><td>Written trading plan (Module 11)</td><td>20%</td><td>Meets every rubric item</td></tr>' +
+          '<tr><td>Journal of 30 demo trades + review (Module 12)</td><td>20%</td><td>Complete, with a self-review</td></tr>' +
+        '</tbody></table></div>' +
+
+        '<div class="callout danger"><p><b>What a pass does not mean.</b> Completing this course means the student can read a chart, size a position and follow a written process. It does not mean they will be profitable. Most retail accounts lose money. Say this out loud in session one and again in session twelve.</p></div>' +
+      '</div>';
+  }
+
+  /* ---------- toolkit ---------- */
+  function viewToolkit() {
+    app.innerHTML =
+      '<div class="crumb"><a href="#/">Modules</a> / Toolkit</div>' +
+      '<div class="module-head"><h1>Instructor Toolkit</h1>' +
+      '<p class="lede">The reference tables you will reach for mid-session, plus the printable templates the labs depend on.</p></div>' +
+
+      '<div class="panel">' +
+        '<h2>Position size — the one formula that matters</h2>' +
+        '<p>Every risk decision in this course reduces to this. Write it on the board in session one and leave it there.</p>' +
+        '<div class="callout good"><p><code>Lots = (Account balance &times; Risk %) &divide; (Stop distance in pips &times; Pip value per lot)</code></p></div>' +
+        '<div class="table-wrap"><table><thead><tr><th>Pair type</th><th>Pip = </th><th>Pip value, 1.00 standard lot</th><th>Notes</th></tr></thead><tbody>' +
+          '<tr><td>USD-quoted (EUR/USD, GBP/USD, AUD/USD)</td><td>0.0001</td><td>$10.00 exactly</td><td>The easy case — teach with these first</td></tr>' +
+          '<tr><td>JPY-quoted (USD/JPY, EUR/JPY)</td><td>0.01</td><td>≈ $10 &divide; USDJPY rate &times; 100 ≈ $6–7</td><td>Two decimal places, not four — the classic beginner error</td></tr>' +
+          '<tr><td>USD-base (USD/CHF, USD/CAD)</td><td>0.0001</td><td>$10 &divide; current rate</td><td>Varies with price</td></tr>' +
+          '<tr><td>Gold (XAU/USD)</td><td>0.01 or 0.1</td><td>Broker-dependent</td><td>Always verify in the platform before sizing</td></tr>' +
+        '</tbody></table></div>' +
+        '<div class="callout warn"><p><b>Teaching point.</b> Never let a student memorise "one pip is ten dollars". It is ten dollars per <em>standard</em> lot on a <em>USD-quoted</em> pair. Make them state all three conditions.</p></div>' +
+
+        '<h3>Lot size reference</h3>' +
+        '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Units</th><th>Volume field</th><th>Pip value (USD-quoted)</th></tr></thead><tbody>' +
+          '<tr><td>Standard lot</td><td>100,000</td><td>1.00</td><td>$10.00</td></tr>' +
+          '<tr><td>Mini lot</td><td>10,000</td><td>0.10</td><td>$1.00</td></tr>' +
+          '<tr><td>Micro lot</td><td>1,000</td><td>0.01</td><td>$0.10</td></tr>' +
+          '<tr><td>Nano lot (some brokers)</td><td>100</td><td>0.001</td><td>$0.01</td></tr>' +
+        '</tbody></table></div>' +
+
+        '<h3>What risk of ruin actually looks like</h3>' +
+        '<p>Losing streaks are longer than students expect. At a 50% win rate, a run of 7 losses happens roughly once every 128 trades — that is a normal month, not a disaster.</p>' +
+        '<div class="table-wrap"><table><thead><tr><th>Risk per trade</th><th>After 5 losses</th><th>After 10 losses</th><th>Gain needed to recover from 10</th></tr></thead><tbody>' +
+          '<tr><td>1%</td><td>−4.9%</td><td>−9.6%</td><td>+10.6%</td></tr>' +
+          '<tr><td>2%</td><td>−9.6%</td><td>−18.3%</td><td>+22.4%</td></tr>' +
+          '<tr><td>5%</td><td>−22.6%</td><td>−40.1%</td><td>+67.0%</td></tr>' +
+          '<tr><td>10%</td><td>−41.0%</td><td>−65.1%</td><td>+186.5%</td></tr>' +
+          '<tr><td>20%</td><td>−67.2%</td><td>−89.3%</td><td>+733.8%</td></tr>' +
+        '</tbody></table></div>' +
+        '<div class="callout danger"><p><b>Run this live.</b> Do not just show the table — open a spreadsheet and multiply by 0.98 ten times in front of them, then by 0.80 ten times. The 20% row is what a martingale or over-leveraged account does in a single bad week.</p></div>' +
+
+        '<h3>Risk : reward and the break-even win rate</h3>' +
+        '<div class="table-wrap"><table><thead><tr><th>R:R</th><th>Win rate to break even</th><th>Expectancy at a 50% win rate</th></tr></thead><tbody>' +
+          '<tr><td>1 : 1</td><td>50.0%</td><td>0.00 R</td></tr>' +
+          '<tr><td>1 : 1.5</td><td>40.0%</td><td>+0.25 R</td></tr>' +
+          '<tr><td>1 : 2</td><td>33.3%</td><td>+0.50 R</td></tr>' +
+          '<tr><td>1 : 3</td><td>25.0%</td><td>+1.00 R</td></tr>' +
+          '<tr><td>2 : 1</td><td>66.7%</td><td>−0.25 R</td></tr>' +
+        '</tbody></table></div>' +
+        '<p class="muted">Expectancy per trade = (win rate &times; reward) − (loss rate &times; risk), expressed in R, where 1R is the amount risked. Costs are excluded — add spread and commission before believing any of it.</p>' +
+
+        '<h3>Session clock (all times UTC)</h3>' +
+        '<div class="table-wrap"><table><thead><tr><th>Session</th><th>Approx. hours</th><th>Character</th><th>Best for</th></tr></thead><tbody>' +
+          '<tr><td>Sydney</td><td>21:00–06:00</td><td>Thin, slow</td><td>AUD, NZD ranges</td></tr>' +
+          '<tr><td>Tokyo</td><td>00:00–09:00</td><td>Orderly, range-prone</td><td>JPY pairs, range strategies</td></tr>' +
+          '<tr><td>London</td><td>07:00–16:00</td><td>Highest volume of the day</td><td>EUR, GBP trends and breakouts</td></tr>' +
+          '<tr><td>New York</td><td>12:00–21:00</td><td>News-driven</td><td>USD pairs, gold</td></tr>' +
+          '<tr><td><b>London/NY overlap</b></td><td><b>12:00–16:00</b></td><td><b>Peak liquidity and range</b></td><td><b>Most day-trading setups</b></td></tr>' +
+        '</tbody></table></div>' +
+        '<p class="muted">Daylight saving shifts London and New York by an hour at different times of year, so these drift. Have students verify against their own broker’s server clock rather than trusting a fixed table.</p>' +
+
+        '<h3>Printable templates the labs use</h3>' +
+        '<ul class="tight">' +
+          '<li><b>Trade journal columns:</b> date/time, pair, timeframe, direction, setup name, entry, stop, target, lots, risk %, R planned, R achieved, screenshot link, did-I-follow-my-plan (Y/N), one-line lesson.</li>' +
+          '<li><b>Pre-trade checklist:</b> Is the session right? Is there red-folder news in the next 60 minutes? Is my direction aligned with the higher timeframe? Is my stop at a level rather than a round number of pips? Is my risk at or below the plan? Would I take this trade if the last one had been a loss?</li>' +
+          '<li><b>Weekly review sheet:</b> trades taken, rules broken, best trade and why, worst trade and why, one process change for next week.</li>' +
+        '</ul>' +
+        '<p class="muted">Build these as a shared spreadsheet before session one. Handing students an empty template on day one is far more effective than asking them to design one in Module 12.</p>' +
+      '</div>';
+  }
+
+  /* ---------- glossary ---------- */
+  function viewGlossary() {
+    var all = [];
+    MODULES.forEach(function (m) {
+      (m.glossary || []).forEach(function (g) { all.push({ t: g.t, d: g.d, m: m.id }); });
+    });
+    all.sort(function (a, b) { return a.t.toLowerCase().localeCompare(b.t.toLowerCase()); });
+
+    var rows = all.map(function (g) {
+      return '<tr><td><b>' + esc(g.t) + '</b></td><td>' + md(g.d) +
+        '</td><td><a href="#/m/' + g.m + '">M' + g.m + '</a></td></tr>';
+    }).join('');
+
+    app.innerHTML =
+      '<div class="crumb"><a href="#/">Modules</a> / Glossary</div>' +
+      '<div class="module-head"><h1>Glossary</h1>' +
+      '<p class="lede">' + all.length + ' terms, in the module where each is first taught. Give this to students as a handout on day one.</p></div>' +
+      '<div class="panel"><input id="gsearch" class="btn" style="width:100%;padding:.6rem .9rem;margin-bottom:1rem" placeholder="Filter terms…">' +
+      '<div class="table-wrap"><table id="gtable"><thead><tr><th>Term</th><th>Meaning</th><th>Taught in</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+
+    var search = document.getElementById('gsearch');
+    search.addEventListener('input', function () {
+      var q = search.value.toLowerCase();
+      Array.prototype.forEach.call(document.querySelectorAll('#gtable tbody tr'), function (tr) {
+        tr.style.display = tr.textContent.toLowerCase().indexOf(q) > -1 ? '' : 'none';
+      });
+    });
+  }
+
+  /* ---------- module ---------- */
+  function viewModule(id, tab) {
+    var m = MODULES.find(function (x) { return x.id === id; });
+    if (!m) { app.innerHTML = '<div class="panel"><h2>Module not found</h2><p><a href="#/">Back to modules</a></p></div>'; return; }
+    tab = tab || 'slides';
+
+    var prev = MODULES.find(function (x) { return x.id === id - 1; });
+    var next = MODULES.find(function (x) { return x.id === id + 1; });
+
+    app.innerHTML =
+      '<div class="crumb"><a href="#/">Modules</a> / Module ' + m.id + '</div>' +
+      '<div class="module-head">' +
+        '<h1>' + esc(m.title) + '</h1>' +
+        '<p class="lede">' + esc(m.tagline) + '</p>' +
+        '<div class="chips"><span class="chip ' + lvlClass(m.level) + '">' + esc(m.level) + '</span>' +
+        '<span class="chip">' + esc(m.duration) + '</span>' +
+        '<span class="chip">' + m.slides.length + ' slides</span></div>' +
+      '</div>' +
+      '<div class="tabs" role="tablist">' +
+        ['slides|Slides', 'lesson|Practical Lab', 'quiz|Quiz', 'notes|Objectives &amp; Terms'].map(function (t) {
+          var p = t.split('|');
+          return '<button role="tab" data-tab="' + p[0] + '" aria-selected="' + (tab === p[0]) + '">' + p[1] + '</button>';
+        }).join('') +
+      '</div>' +
+      '<div id="tabpanel"></div>' +
+      '<div class="pager">' +
+        (prev ? '<a href="#/m/' + prev.id + '">← M' + prev.id + ' · ' + esc(prev.title) + '</a>' : '<span></span>') +
+        (next ? '<a href="#/m/' + next.id + '">M' + next.id + ' · ' + esc(next.title) + ' →</a>' : '<span></span>') +
+      '</div>';
+
+    Array.prototype.forEach.call(app.querySelectorAll('.tabs button'), function (b) {
+      b.addEventListener('click', function () { location.hash = '#/m/' + m.id + '/' + b.dataset.tab; });
+    });
+
+    var panel = document.getElementById('tabpanel');
+    if (tab === 'slides') renderDeck(m, panel);
+    else if (tab === 'lesson') renderLesson(m, panel);
+    else if (tab === 'quiz') renderQuiz(m, panel);
+    else renderNotes(m, panel);
+  }
+
+  /* ---------- slide deck ---------- */
+  var deckState = { i: 0, notes: true, key: null };
+
+  function renderDeck(m, panel) {
+    if (deckState.key !== m.id) { deckState.key = m.id; deckState.i = 0; }
+
+    panel.innerHTML =
+      '<div class="deck-bar">' +
+        '<span class="counter" id="deckCount"></span>' +
+        '<div class="deck-controls">' +
+          '<button class="btn" id="tNotes" aria-pressed="' + deckState.notes + '">Instructor notes</button>' +
+          '<button class="btn" id="tPresent" aria-pressed="false">Present</button>' +
+          '<button class="btn" id="tPrint">Print handout</button>' +
+        '</div>' +
+      '</div>' +
+      '<div id="slideHost"></div>' +
+      '<div class="deck-nav">' +
+        '<button class="btn" id="bPrev">← Previous</button>' +
+        '<button class="btn primary" id="bNext">Next →</button>' +
+      '</div>';
+
+    function draw() {
+      var s = m.slides[deckState.i];
+      document.getElementById('deckCount').textContent =
+        'Slide ' + (deckState.i + 1) + ' / ' + m.slides.length + '  ·  Module ' + m.id;
+      document.getElementById('slideHost').innerHTML =
+        '<div class="slide">' +
+          '<div class="kicker">' + esc(s.kicker || m.title) + '</div>' +
+          '<h2>' + esc(s.title) + '</h2>' +
+          (s.bullets ? '<ul>' + s.bullets.map(function (b) { return '<li>' + md(b) + '</li>'; }).join('') + '</ul>' : '') +
+          (s.body ? '<div>' + md(s.body) + '</div>' : '') +
+          (s.visual ? '<div class="slide-visual">' + s.visual + '</div>' : '') +
+        '</div>' +
+        (deckState.notes && s.note ? '<div class="notes"><b>Instructor note.</b> ' + md(s.note) + '</div>' : '');
+      document.getElementById('bPrev').disabled = deckState.i === 0;
+      document.getElementById('bNext').disabled = deckState.i === m.slides.length - 1;
+    }
+    function go(d) {
+      var n = deckState.i + d;
+      if (n >= 0 && n < m.slides.length) { deckState.i = n; draw(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    }
+
+    document.getElementById('bPrev').addEventListener('click', function () { go(-1); });
+    document.getElementById('bNext').addEventListener('click', function () { go(1); });
+    document.getElementById('tNotes').addEventListener('click', function () {
+      deckState.notes = !deckState.notes;
+      this.setAttribute('aria-pressed', deckState.notes);
+      draw();
+    });
+    document.getElementById('tPresent').addEventListener('click', function () {
+      var on = document.body.classList.toggle('presenting');
+      this.setAttribute('aria-pressed', on);
+      this.textContent = on ? 'Exit present' : 'Present';
+    });
+    document.getElementById('tPrint').addEventListener('click', function () { printDeck(m); });
+
+    document.onkeydown = function (e) {
+      if (/^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); go(1); }
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(-1); }
+      else if (e.key === 'n' || e.key === 'N') { document.getElementById('tNotes').click(); }
+      else if (e.key === 'Escape' && document.body.classList.contains('presenting')) { document.getElementById('tPresent').click(); }
+    };
+
+    draw();
+  }
+
+  function printDeck(m) {
+    var w = window.open('', '_blank');
+    var body = m.slides.map(function (s, i) {
+      return '<section><div class="k">Slide ' + (i + 1) + ' · ' + esc(s.kicker || m.title) + '</div>' +
+        '<h2>' + esc(s.title) + '</h2>' +
+        (s.bullets ? '<ul>' + s.bullets.map(function (b) { return '<li>' + md(b) + '</li>'; }).join('') + '</ul>' : '') +
+        (s.body ? '<p>' + md(s.body) + '</p>' : '') +
+        (s.note ? '<div class="n"><b>Notes:</b> ' + md(s.note) + '</div>' : '') +
+        '<div class="write"><b>Student notes</b></div></section>';
+    }).join('');
+    w.document.write(
+      '<!doctype html><meta charset="utf-8"><title>Module ' + m.id + ' handout — ' + esc(m.title) + '</title>' +
+      '<style>body{font:14px/1.55 system-ui,sans-serif;max-width:52em;margin:2em auto;padding:0 1em;color:#111}' +
+      'section{page-break-inside:avoid;border-bottom:1px solid #ccc;padding-bottom:1.2em;margin-bottom:1.6em}' +
+      '.k{font:700 10px/1 ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase;color:#1e5eff;margin-bottom:.5em}' +
+      'h1{font-size:1.5em}h2{font-size:1.15em;margin:.2em 0 .5em}ul{margin:.3em 0 .8em;padding-left:1.2em}' +
+      '.n{background:#fff6e5;border-left:3px solid #b26a00;padding:.5em .8em;font-size:.9em;margin:.6em 0}' +
+      '.write{border:1px dashed #bbb;border-radius:6px;height:5em;padding:.4em .6em;font-size:.75em;color:#888}' +
+      '</style><h1>Module ' + m.id + ' — ' + esc(m.title) + '</h1><p>' + esc(m.tagline) + '</p>' + body);
+    w.document.close();
+  }
+
+  /* ---------- practical lab ---------- */
+  function renderLesson(m, panel) {
+    var p = m.practical;
+    if (!p) { panel.innerHTML = '<div class="panel"><p>No lab for this module.</p></div>'; return; }
+
+    panel.innerHTML =
+      '<div class="panel">' +
+        '<h2>' + esc(p.title) + '</h2>' +
+        '<p class="muted">' + esc(p.time || m.duration) + ' · Student works on a live chart while you supervise.</p>' +
+        (p.intro ? '<p>' + md(p.intro) + '</p>' : '') +
+
+        '<h3>What the student needs open</h3>' +
+        '<ul class="tight">' + p.setup.map(function (s) { return '<li>' + md(s) + '</li>'; }).join('') + '</ul>' +
+
+        '<h3>Procedure</h3>' +
+        '<ol class="steps">' + p.steps.map(function (s) {
+          return '<li><h4>' + esc(s.h) + '</h4><p>' + md(s.d) + '</p></li>';
+        }).join('') + '</ol>' +
+
+        (p.figure || '') +
+
+        '<div class="callout good"><p><b>Deliverable.</b> ' + md(p.deliverable) + '</p></div>' +
+
+        '<h3>Marking rubric</h3>' +
+        '<div class="table-wrap"><table><thead><tr><th>Criterion</th><th>Competent looks like</th></tr></thead><tbody>' +
+          p.rubric.map(function (r) { return '<tr><td><b>' + esc(r.c) + '</b></td><td>' + md(r.d) + '</td></tr>'; }).join('') +
+        '</tbody></table></div>' +
+
+        (p.pitfalls ? '<h3>Where students go wrong</h3><ul class="tight">' +
+          p.pitfalls.map(function (x) { return '<li>' + md(x) + '</li>'; }).join('') + '</ul>' : '') +
+
+        (m.homework ? '<h3>Homework before the next session</h3><ul class="tight">' +
+          m.homework.map(function (x) { return '<li>' + md(x) + '</li>'; }).join('') + '</ul>' : '') +
+      '</div>';
+  }
+
+  /* ---------- quiz ---------- */
+  function renderQuiz(m, panel) {
+    var qs = m.quiz || [];
+    panel.innerHTML =
+      '<div class="panel">' +
+        '<h2>Module ' + m.id + ' check</h2>' +
+        '<p class="muted">' + qs.length + ' questions. 80% or better to move on.</p>' +
+        '<form id="quizForm">' +
+          qs.map(function (q, qi) {
+            return '<div class="q" data-qi="' + qi + '"><p>' + (qi + 1) + '. ' + md(q.q) + '</p>' +
+              q.options.map(function (o, oi) {
+                return '<label data-oi="' + oi + '"><input type="radio" name="q' + qi + '" value="' + oi + '">' + md(o) + '</label>';
+              }).join('') +
+              '<div class="explain" hidden>' + md(q.why) + '</div></div>';
+          }).join('') +
+          '<button type="submit" class="btn primary">Check answers</button>' +
+          '<button type="button" class="btn" id="qReset">Reset</button>' +
+          '<div class="score" id="score"></div>' +
+        '</form>' +
+      '</div>';
+
+    var form = document.getElementById('quizForm');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var right = 0;
+      qs.forEach(function (q, qi) {
+        var box = form.querySelector('.q[data-qi="' + qi + '"]');
+        var picked = form.querySelector('input[name="q' + qi + '"]:checked');
+        Array.prototype.forEach.call(box.querySelectorAll('label'), function (l) {
+          l.classList.remove('correct', 'wrong');
+          if (+l.dataset.oi === q.a) l.classList.add('correct');
+        });
+        if (picked) {
+          if (+picked.value === q.a) right++;
+          else box.querySelector('label[data-oi="' + picked.value + '"]').classList.add('wrong');
+        }
+        box.querySelector('.explain').hidden = false;
+      });
+      var pct = Math.round(right / qs.length * 100);
+      document.getElementById('score').innerHTML =
+        right + ' / ' + qs.length + ' correct (' + pct + '%) — ' +
+        (pct >= 80 ? '<span style="color:var(--bull)">ready for the next module.</span>'
+                   : '<span style="color:var(--bear)">re-teach the slides behind the missed questions before moving on.</span>');
+    });
+    document.getElementById('qReset').addEventListener('click', function () { renderQuiz(m, panel); });
+  }
+
+  /* ---------- objectives & terms ---------- */
+  function renderNotes(m, panel) {
+    panel.innerHTML =
+      '<div class="panel">' +
+        '<h2>Learning objectives</h2>' +
+        '<p class="muted">By the end of this module the student can:</p>' +
+        '<ul class="tight">' + m.objectives.map(function (o) { return '<li>' + md(o) + '</li>'; }).join('') + '</ul>' +
+        (m.misconceptions ? '<h3>Misconceptions to attack head-on</h3><ul class="tight">' +
+          m.misconceptions.map(function (x) { return '<li>' + md(x) + '</li>'; }).join('') + '</ul>' : '') +
+        '<h3>Key terms introduced here</h3>' +
+        '<div class="table-wrap"><table><thead><tr><th>Term</th><th>Meaning</th></tr></thead><tbody>' +
+          (m.glossary || []).map(function (g) { return '<tr><td><b>' + esc(g.t) + '</b></td><td>' + md(g.d) + '</td></tr>'; }).join('') +
+        '</tbody></table></div>' +
+      '</div>';
+  }
+
+  /* ---------- router ---------- */
+  function route() {
+    document.onkeydown = null;
+    document.body.classList.remove('presenting');
+    var h = (location.hash || '#/').replace(/^#\/?/, '');
+    var parts = h.split('/').filter(Boolean);
+    if (parts[0] === 'm' && parts[1]) viewModule(+parts[1], parts[2]);
+    else if (parts[0] === 'plan') viewPlan();
+    else if (parts[0] === 'toolkit') viewToolkit();
+    else if (parts[0] === 'glossary') viewGlossary();
+    else viewHome();
+    if (!parts.length || parts[0] !== 'm') window.scrollTo(0, 0);
+  }
+
+  window.addEventListener('hashchange', route);
+  route();
+})();
