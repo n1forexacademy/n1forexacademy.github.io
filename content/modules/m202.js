@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "120 min",
 
   objectives: [
-    "Explain why bond prices fall when yields rise",
-    "Distinguish coupon, current yield and yield to maturity",
-    "Read a bond quoted at a premium or a discount and say what it implies",
-    "Compute a simple current yield and interpret a yield to maturity",
-    "Explain what a change in market rates does to a bond you already hold"
+    "Explain why the price of a bond you already own falls when interest rates rise",
+    "Tell apart the three different yields people quote at you",
+    "Read a bond priced above or below 100 and say what that tells you",
+    "Work out a simple yield, and read a yield to maturity properly",
+    "Say what a rate change does to a bond you hold — and what it does not"
   ],
 
   misconceptions: [

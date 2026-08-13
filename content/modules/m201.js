@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "90 min",
 
   objectives: [
-    "Explain what a bondholder is owed and by whom",
-    "Identify the four defining terms of any bond",
-    "Explain why bondholders rank above shareholders and what that buys them",
-    "Distinguish government from corporate issuance",
-    "State plainly what a bond can and cannot do"
+    "Say exactly what you are owed when you hold a bond, and by whom",
+    "Name the four things that define any bond",
+    "Explain why lenders are paid before owners, and what that protection costs you",
+    "Tell the difference between lending to a government and lending to a company",
+    "Say plainly what a bond can and cannot do for you"
   ],
 
   misconceptions: [

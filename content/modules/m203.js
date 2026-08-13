@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "90 min",
 
   objectives: [
-    "Explain duration as a measure of sensitivity to rate changes",
-    "Estimate the price impact of a rate move using duration",
-    "Explain why longer maturities are more sensitive",
-    "Describe convexity in plain terms without the mathematics",
-    "Choose a maturity appropriate to a rate view and a risk tolerance"
+    "Use duration to say how much a bond moves when rates change",
+    "Estimate what a given rate move would cost you, before you buy",
+    "Explain why money you receive further in the future swings further",
+    "Describe convexity in plain words, without any of the mathematics",
+    "Pick a maturity that matches your view on rates and what you can tolerate"
   ],
 
   misconceptions: [
