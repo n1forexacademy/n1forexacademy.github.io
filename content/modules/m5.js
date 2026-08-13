@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "90 min",
 
   objectives: [
-    "Map the four sessions onto their own local clock and their broker's server clock",
-    "Predict the typical behaviour of a pair in each session and explain why",
-    "Identify the overlap window and justify why most day-trading setups live there",
-    "Explain how volatility, spread and range interact across the day",
-    "Choose a trading window that fits their own life and defend the choice"
+    "Work out when each of the four sessions runs in your own time, and in your broker's",
+    "Say what a pair usually does in each session, and why it behaves that way",
+    "Explain why the London–New York overlap holds the best conditions of the day",
+    "Understand why the quiet hours cost you more and offer you less, at the same time",
+    "Choose a trading window that fits your actual life, and say why it suits your strategy"
   ],
 
   misconceptions: [
@@ -30,7 +30,7 @@ window.COURSE = (window.COURSE || []).concat([
     { t: "Average daily range (ADR)", d: "The typical high-to-low distance an instrument covers in a day. A reality check on targets and stops." },
     { t: "Server time", d: "The broker's clock, which determines where the daily candle opens and closes. Rarely your local time." },
     { t: "Rollover", d: "The daily point when swap is applied, usually around 21:00–22:00 UTC. Spreads often widen briefly." },
-    { t: "Liquidity gap", d: "A period of thin resting orders where price can move a long way on modest volume." },
+    { t: "Liquidity gap", d: "A stretch where hardly anyone is trading, so a modest order can push price a surprisingly long way." },
     { t: "Session high / low", d: "The extremes established during one session, often tested or broken by the next." },
     { t: "Killzone", d: "A common name for a high-activity window near a session open, when directional moves often begin." }
   ],

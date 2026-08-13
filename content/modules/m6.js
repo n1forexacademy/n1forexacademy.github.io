@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "120 min",
 
   objectives: [
-    "Read a candlestick and state what happened inside that period",
-    "Classify a market as uptrend, downtrend or range using swing highs and lows",
-    "Identify where a trend structurally breaks, rather than guessing at a reversal",
-    "Use multiple timeframes coherently without contradicting yourself",
-    "Describe any chart aloud in a consistent, repeatable format"
+    "Read a single candle and say who won that period, and how convincingly",
+    "Decide mechanically whether a market is trending up, trending down, or going nowhere",
+    "Tell the difference between a pullback and a trend that has genuinely ended",
+    "Use three timeframes together without talking yourself into a contradiction",
+    "Describe any chart out loud in five sentences, ending with what would prove you wrong"
   ],
 
   misconceptions: [
