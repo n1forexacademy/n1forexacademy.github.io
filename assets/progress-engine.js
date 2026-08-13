@@ -12,14 +12,78 @@
 (function () {
   'use strict';
 
-  function flatSteps() {
+  /* ---------- tracks ----------
+     The forex track's stages live in window.PATH (unchanged, so existing
+     student progress stays valid). Later tracks carry their own stages in
+     window.TRACKS. */
+  function trackList() {
+    return window.TRACKS || [{ id: 'forex', title: 'Forex', stagesRef: 'PATH' }];
+  }
+  function trackById(id) {
+    return trackList().filter(function (t) { return t.id === id; })[0] || trackList()[0];
+  }
+  function stagesOf(track) {
+    return track.stagesRef === 'PATH' ? (window.PATH.stages || []) : (track.stages || []);
+  }
+  function defaultTrackId() { return trackList()[0].id; }
+
+  function flatSteps(trackId) {
+    var track = trackById(trackId || defaultTrackId());
     var out = [];
-    (window.PATH.stages || []).forEach(function (stage) {
+    stagesOf(track).forEach(function (stage) {
       (stage.steps || []).forEach(function (step) {
-        out.push(Object.assign({}, step, { stage: stage.id, stageTitle: stage.title }));
+        out.push(Object.assign({}, step, {
+          stage: stage.id, stageTitle: stage.title, track: track.id
+        }));
       });
     });
     return out;
+  }
+
+  /* Which track a module belongs to, so route guards pick the right path. */
+  function trackOfModule(moduleId) {
+    var found = null;
+    trackList().forEach(function (t) {
+      flatSteps(t.id).forEach(function (s) {
+        if (s.type === 'module' && +s.ref === +moduleId) found = t.id;
+      });
+    });
+    return found;
+  }
+
+  /* Certificates are stored per track. The forex track keeps the original
+     singular `certificate` key so existing records remain valid. */
+  function certOf(progress, trackId) {
+    progress = progress || {};
+    if (trackId === 'forex' || !trackId) {
+      return progress.certificate || (progress.certificates || {})[trackId || 'forex'] || null;
+    }
+    return (progress.certificates || {})[trackId] || null;
+  }
+
+  function trackUnlocked(trackId, progress) {
+    var t = trackById(trackId);
+    if (!t.requires) return true;
+    var prior = certOf(progress, t.requires);
+    return !!(prior && prior.issuedAt);
+  }
+
+  /* Every track with its lock state and completion, for the track picker. */
+  function tracks(progress) {
+    return trackList().map(function (t) {
+      var unlocked = trackUnlocked(t.id, progress);
+      var st = unlocked ? state(progress, t.id) : null;
+      return {
+        track: t,
+        unlocked: unlocked,
+        requires: t.requires,
+        percent: st ? st.percent : 0,
+        done: st ? st.done : 0,
+        total: st ? st.total : flatSteps(t.id).length,
+        certificate: certOf(progress, t.id),
+        finished: st ? st.finished : false
+      };
+    });
   }
 
   /* Demo-period figures derived from the weekly log the student submits. */
@@ -62,6 +126,12 @@
     progress = progress || {};
     if (progress.overrides && progress.overrides[step.id]) return true;
 
+    // Certificates are keyed per track once tracks exist.
+    if (step.type === 'cert' && step.track && step.track !== 'forex') {
+      var c = certOf(progress, step.track);
+      return !!(c && c.issuedAt);
+    }
+
     if (step.type === 'module') {
       var m = (progress.modules || {})[String(step.ref)];
       return !!(m && typeof m.quiz === 'number' && m.quiz >= (step.pass || 80));
@@ -94,10 +164,11 @@
     return '';
   }
 
-  /* Full state of the path for one student. */
-  function state(progress) {
+  /* Full state of one track's path for one student. */
+  function state(progress, trackId) {
     progress = progress || {};
-    var steps = flatSteps();
+    var track = trackById(trackId || defaultTrackId());
+    var steps = flatSteps(track.id);
     var blockedFrom = -1;
 
     var decorated = steps.map(function (step, i) {
@@ -117,7 +188,7 @@
     var doneCount = decorated.filter(function (d) { return d.done; }).length;
 
     // Group back into stages for display.
-    var stages = (window.PATH.stages || []).map(function (stage) {
+    var stages = stagesOf(track).map(function (stage) {
       var mine = decorated.filter(function (d) { return d.step.stage === stage.id; });
       var allDone = mine.length > 0 && mine.every(function (d) { return d.done; });
       var anyOpen = mine.some(function (d) { return d.status === 'current'; });
@@ -130,6 +201,7 @@
     var current = decorated.filter(function (d) { return d.status === 'current'; })[0] || null;
 
     return {
+      track: track,
       steps: decorated,
       stages: stages,
       current: current,
@@ -143,19 +215,25 @@
 
   /* Route guards — used to stop someone opening a locked module by URL. */
   function moduleUnlocked(moduleId, progress) {
-    var st = state(progress);
-    var hit = st.steps.filter(function (d) {
+    var tid = trackOfModule(moduleId);
+    if (!tid) return true;                          // modules outside any path stay open
+    if (!trackUnlocked(tid, progress)) return false; // whole track still locked
+    var hit = state(progress, tid).steps.filter(function (d) {
       return d.step.type === 'module' && +d.step.ref === +moduleId;
     })[0];
-    return hit ? (hit.status !== 'locked') : true;   // modules outside the path stay open
+    return hit ? (hit.status !== 'locked') : true;
   }
 
   function drillUnlocked(drillId, progress) {
-    var st = state(progress);
-    var hit = st.steps.filter(function (d) {
-      return d.step.type === 'drill' && d.step.ref === drillId;
-    })[0];
-    return hit ? (hit.status !== 'locked') : true;
+    var found = null, tid = null;
+    trackList().forEach(function (t) {
+      state(progress, t.id).steps.forEach(function (d) {
+        if (d.step.type === 'drill' && d.step.ref === drillId) { found = d; tid = t.id; }
+      });
+    });
+    if (!found) return true;
+    if (!trackUnlocked(tid, progress)) return false;
+    return found.status !== 'locked';
   }
 
   /* What must be finished first, phrased for a human. */
