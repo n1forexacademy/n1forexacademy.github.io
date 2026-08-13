@@ -16,11 +16,16 @@
 (function () {
   'use strict';
 
+  /* Bumped by tools/bump-assets.mjs so a deploy invalidates cached module
+     files. Without it a returning student keeps the old lesson text. */
+  var ASSET_V = '2';
+
   var loaded = {};        // moduleId -> true
   var inFlight = {};      // moduleId -> Promise
 
   function filesFor(id) {
-    return ['content/modules/m' + id + '.js', 'content/lessons/l' + id + '.js'];
+    var q = ASSET_V ? '?v=' + ASSET_V : '';
+    return ['content/modules/m' + id + '.js' + q, 'content/lessons/l' + id + '.js' + q];
   }
 
   function injectScript(src) {

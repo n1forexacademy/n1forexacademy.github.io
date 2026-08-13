@@ -271,9 +271,15 @@
       '<div class="module-head">' +
         '<h1>' + esc(m.title) + '</h1>' +
         '<p class="lede">' + esc(m.tagline) + '</p>' +
+        // Duration and slide count are instructor planning figures — a student
+        // has no session to fit into and never sees a slide.
         '<div class="chips"><span class="chip ' + lvlClass(m.level) + '">' + esc(m.level) + '</span>' +
-        '<span class="chip">' + esc(m.duration) + '</span>' +
-        '<span class="chip">' + m.slides.length + ' slides</span></div>' +
+        (Auth.isInstructor()
+          ? '<span class="chip">' + esc(m.duration) + '</span>' +
+            '<span class="chip">' + m.slides.length + ' slides</span>'
+          : '<span class="chip">' + ((window.Lessons && Lessons.forModule(m.id))
+              ? Lessons.forModule(m.id).length + ' lessons' : 'self-paced') + '</span>') +
+        '</div>' +
       '</div>' +
       '<div class="tabs" role="tablist">' +
         (hasLessons
