@@ -28,8 +28,8 @@ window.COURSE = (window.COURSE || []).concat([
     { t: "Market order", d: "Buy or sell immediately at the best price currently available. Certain execution, uncertain price." },
     { t: "Limit order", d: "An order to buy below the current price or sell above it. Certain price, uncertain execution." },
     { t: "Stop order", d: "An order to buy above the current price or sell below it, used to enter on momentum or to exit a loser." },
-    { t: "Stop loss", d: "A resting exit order that closes a losing position at a defined level." },
-    { t: "Take profit", d: "A resting exit order that closes a winning position at a target level." },
+    { t: "Stop loss", d: "An order that sits waiting and closes a losing trade at a level you chose in advance." },
+    { t: "Take profit", d: "An order that sits waiting and closes a winning trade once it reaches your target." },
     { t: "Leverage", d: "The ratio between position size and required margin. 100:1 means $1,000 of margin controls $100,000 of currency." },
     { t: "Margin", d: "The deposit locked as collateral while a position is open. It is not a fee and it is not spent." },
     { t: "Free margin", d: "Equity minus used margin — what is available to open new positions or absorb losses." },
@@ -37,7 +37,7 @@ window.COURSE = (window.COURSE || []).concat([
     { t: "Stop out", d: "Automatic forced closure of positions when margin level falls below the broker's threshold." },
     { t: "Slippage", d: "The difference between the price you expected and the price you received." },
     { t: "Gap", d: "A jump between one price and the next with no trading in between — typically at the weekly open or on major news." },
-    { t: "Equity", d: "Balance plus or minus the floating profit and loss of open positions. The number that actually matters." }
+    { t: "Equity", d: "Your balance adjusted up or down by whatever your open trades are worth right now. The number that actually matters." }
   ],
 
   slides: [

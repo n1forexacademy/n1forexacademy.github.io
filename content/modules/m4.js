@@ -25,16 +25,16 @@ window.COURSE = (window.COURSE || []).concat([
   ],
 
   glossary: [
-    { t: "Dealing desk / market maker", d: "A broker that takes the other side of client trades internally rather than passing them to the market." },
-    { t: "STP / ECN / agency", d: "Execution models that pass client orders to external liquidity providers, with the broker earning commission rather than client losses." },
-    { t: "A-book / B-book", d: "Whether a broker hedges a client's trade externally (A) or absorbs it internally (B)." },
-    { t: "Segregated funds", d: "Client money held separately from the broker's own operating funds, so it survives the broker's insolvency." },
-    { t: "Raw spread account", d: "Near-interbank spreads with an explicit per-lot commission." },
-    { t: "Terminal / Market Watch", d: "The MT4/MT5 panels showing account state and the instrument list." },
-    { t: "Expert Advisor (EA)", d: "An automated trading program that runs inside MetaTrader." },
-    { t: "Custom indicator", d: "A user-installed chart study, distinct from the platform's built-ins." },
-    { t: "Data folder", d: "The MetaTrader directory where indicators, EAs and scripts must be installed. Reached via File → Open Data Folder." },
-    { t: "Slippage tolerance", d: "The maximum price deviation you will accept on a market order before it is rejected." }
+    { t: "Dealing desk / market maker", d: "A broker that takes the other side of your trade itself instead of passing it to the wider market. Like a bookmaker — when you win, they pay." },
+    { t: "STP / ECN / agency", d: "The opposite model: your order goes out to the real market and the broker charges a fee instead. They earn whether you win or lose." },
+    { t: "A-book / B-book", d: "Shorthand for those two. A-book means your trade was passed out to the market; B-book means the broker kept it in-house." },
+    { t: "Segregated funds", d: "Your money kept in a separate account from the broker's own, so if the broker goes under it was never theirs to lose." },
+    { t: "Raw spread account", d: "An account with a very tight spread and a stated commission per lot, rather than the cost being buried in a wider spread." },
+    { t: "Terminal / Market Watch", d: "The two MT4/MT5 panels you will live in — one shows your account and open trades, the other lists what you can trade." },
+    { t: "Expert Advisor (EA)", d: "A program that trades automatically inside MetaTrader, following rules somebody wrote for it." },
+    { t: "Custom indicator", d: "A chart study you install yourself, as opposed to the ones the platform came with." },
+    { t: "Data folder", d: "The folder MetaTrader actually reads indicators and EAs from. Open it from File → Open Data Folder — putting files anywhere else is why they seem not to work." },
+    { t: "Slippage tolerance", d: "How much worse a price you will accept before the order is simply rejected instead of filled." }
   ],
 
   slides: [
