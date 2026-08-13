@@ -4,7 +4,11 @@ node_modules/
 .env
 
 # Never commit secrets. Anything matching these stays local.
+# This repo is PUBLIC — it is served at n1forexacademy.github.io.
 *secret*
 *SECRET*
 *_KEY.md
 *.key
+
+# Local-only notes holding account details. Never committed.
+*.local.md
