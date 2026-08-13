@@ -583,9 +583,32 @@
   }
 
   /* ---------- boot ---------- */
-  Auth.gate(app, function () {
-    renderChrome();
-    window.addEventListener('hashchange', route);
+  // An invite link must work for someone with no account, so it is handled
+  // before the sign-in gate rather than behind it.
+  function joinToken() {
+    var m = (location.hash || '').match(/^#\/join\/(.+)$/);
+    return m ? m[1] : null;
+  }
+
+  function boot() {
+    var token = joinToken();
+    if (token) {
+      document.getElementById('topbar').hidden = true;
+      document.getElementById('sitefooter').hidden = true;
+      Auth.renderJoin(app, token);
+      return;
+    }
+    Auth.gate(app, function () {
+      renderChrome();
+      route();
+    });
+  }
+
+  window.addEventListener('hashchange', function () {
+    if (joinToken()) { boot(); return; }
+    if (!Auth.session()) { boot(); return; }
     route();
   });
+
+  boot();
 })();

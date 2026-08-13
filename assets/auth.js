@@ -30,6 +30,12 @@
   }
   function drop(k) { try { localStorage.removeItem(k); } catch (e) {} }
 
+  function esc(s) {
+    return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
   var API = (window.API_BASE || '').replace(/\/+$/, '');
   var serverMode = !!API;
   var cache = null;          // in-memory progress, kept in sync with the server

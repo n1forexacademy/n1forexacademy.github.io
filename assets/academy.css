@@ -219,6 +219,19 @@ ul.lg li.danger{background:color-mix(in srgb,var(--bear) 16%,transparent);color:
 }
 .toast.go{opacity:1;transform:translate(-50%,0)}
 
+/* admin panel */
+.admin-form{display:flex;flex-wrap:wrap;gap:.5rem;margin:.9rem 0}
+.admin-form input,.admin-form select{
+  flex:1 1 150px;min-width:0;padding:.5rem .7rem;font:inherit;font-size:.88rem;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:9px;color:var(--ink);
+}
+.admin-form input[type="number"]{flex:0 0 90px}
+.admin-form button{flex:0 0 auto}
+.admin-msg{font-size:.85rem;margin:.2rem 0 0;min-height:1.2em}
+.admin-msg.ok{color:var(--bull)}
+.admin-msg.bad{color:var(--bear)}
+.hashrow input[readonly]{font-size:.78rem;background:var(--surface)}
+
 /* instructor tools */
 .hashrow{display:flex;gap:.5rem;margin:.6rem 0}
 .hashrow input{
