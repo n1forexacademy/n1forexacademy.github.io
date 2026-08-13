@@ -619,8 +619,10 @@
     if (nav) {
       nav.innerHTML = Auth.isInstructor()
         ? '<a href="#/">Dashboard</a><a href="#/instructor">Admin</a><a href="#/library">Library</a>' +
-          '<a href="#/drills">Trading Floor</a><a href="#/toolkit">Toolkit</a><a href="#/glossary">Glossary</a>'
-        : '<a href="#/">My path</a><a href="#/drills">Trading Floor</a><a href="#/glossary">Glossary</a>';
+          '<a href="#/drills">Trading Floor</a><a href="#/calculators">Calculators</a>' +
+          '<a href="#/toolkit">Toolkit</a><a href="#/glossary">Glossary</a>'
+        : '<a href="#/">My path</a><a href="#/drills">Trading Floor</a>' +
+          '<a href="#/calculators">Calculators</a><a href="#/glossary">Glossary</a>';
     }
     var chip = document.getElementById('userchip');
     chip.innerHTML =
@@ -659,6 +661,7 @@
     else if (parts[0] === 'demo') Journey.demo(app, Auth.progress());
     else if (parts[0] === 'library') viewHome();
     else if (parts[0] === 'plan') viewPlan();
+    else if (parts[0] === 'calculators') Tools.render(app);
     else if (parts[0] === 'toolkit') viewToolkit();
     else if (parts[0] === 'glossary') viewGlossary();
     else if (parts[0] === 'instructor') {

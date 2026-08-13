@@ -1,0 +1,56 @@
+/* N1 Forex Academy — calculator styles. */
+
+.tgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem;margin-bottom:1.6rem}
+
+.tcard{
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:1.1rem 1.2rem;box-shadow:var(--shadow);display:flex;flex-direction:column;
+}
+.tcard header{margin-bottom:.9rem}
+.tcard h3{margin:0 0 .25rem;font-size:1.02rem}
+.tcard header p{margin:0;font-size:.83rem;color:var(--ink-3);line-height:1.5}
+
+.tfields{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.55rem;margin-bottom:.9rem}
+.tf{display:flex;flex-direction:column;gap:.22rem;min-width:0}
+.tf > span{font-size:.72rem;font-weight:600;color:var(--ink-3)}
+.tf-in{display:flex;align-items:center;gap:.3rem}
+.tf-in i,.tf-in u{
+  font-style:normal;text-decoration:none;font-size:.76rem;color:var(--ink-3);
+  font-family:var(--mono);flex:0 0 auto;
+}
+.tf input,.tf select{
+  width:100%;min-width:0;padding:.42rem .55rem;font:inherit;font-size:.88rem;
+  font-family:var(--mono);background:var(--surface-2);color:var(--ink);
+  border:1px solid var(--line);border-radius:8px;
+}
+.tf input:focus,.tf select:focus{outline:2px solid var(--accent);outline-offset:1px}
+
+.tout{
+  background:var(--surface-2);border:1px solid var(--line);border-radius:11px;
+  padding:.5rem .8rem;margin-bottom:.8rem;
+}
+.trow{
+  display:grid;grid-template-columns:1fr auto;gap:.2rem .8rem;align-items:baseline;
+  padding:.34rem 0;border-bottom:1px solid var(--line);
+}
+.trow:last-child{border-bottom:0}
+.trow-l{font-size:.8rem;color:var(--ink-3)}
+.trow-v{font-family:var(--mono);font-size:.9rem;font-weight:700;color:var(--ink);text-align:right}
+.trow-n{grid-column:1/-1;font-size:.72rem;color:var(--ink-3);line-height:1.4}
+.trow.big{padding:.5rem 0}
+.trow.big .trow-l{font-size:.84rem;color:var(--ink-2);font-weight:600}
+.trow.big .trow-v{font-size:1.22rem;color:var(--accent)}
+.trow-v.good{color:var(--bull)!important}
+.trow-v.bad{color:var(--bear)!important}
+.trow-v.warn{color:var(--warn)!important}
+
+.tteach{
+  margin:auto 0 0;font-size:.76rem;color:var(--ink-3);line-height:1.5;
+  border-left:2px solid var(--gold);padding-left:.6rem;
+}
+.tnote{font-size:.8rem;color:var(--ink-3);margin:0}
+
+@media (max-width:520px){
+  .tgrid{grid-template-columns:1fr}
+  .tfields{grid-template-columns:1fr 1fr}
+}
