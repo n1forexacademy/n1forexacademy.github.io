@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "120 min",
 
   objectives: [
-    "Identify the handful of figures that describe a business's size, profitability and debt",
-    "Compute and interpret the common ratios without treating them as verdicts",
-    "Explain why a low price-to-earnings ratio is a question rather than an answer",
-    "Recognise the limits of ratio analysis and where it misleads",
-    "Compare two companies in the same sector on a like-for-like basis"
+    "Find the handful of figures that tell you a company's size, profitability and debt",
+    "Work out the common ratios, and read them as questions rather than verdicts",
+    "Explain why a share that looks cheap is usually cheap for a reason",
+    "Know where these numbers mislead, and say so honestly",
+    "Compare two companies in the same industry on a fair, like-for-like basis"
   ],
 
   misconceptions: [

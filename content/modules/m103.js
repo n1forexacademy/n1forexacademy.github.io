@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "90 min",
 
   objectives: [
-    "State the concrete differences between owned shares and a share CFD",
-    "Explain how leverage and financing change the risk profile",
-    "Describe what happens to dividends and voting rights under each",
-    "Choose the appropriate product for a given holding period and objective",
-    "Explain why the leveraged version reintroduces every forex risk you just learned to control"
+    "Say exactly what you own — and do not own — under each of the two products",
+    "Explain how leverage and the nightly financing charge change what you are risking",
+    "Know who receives the dividend, and who ends up paying it",
+    "Pick the right product for how long you actually intend to hold",
+    "Explain why the leveraged version hands back every risk you just spent twelve modules controlling"
   ],
 
   misconceptions: [

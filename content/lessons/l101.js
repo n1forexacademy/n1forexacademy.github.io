@@ -116,7 +116,7 @@
           "**But here is the catch, and almost nobody explains it.**",
           "**The drift belongs to the index. It does not belong to the company you happen to own.**",
           "An index survives by **replacing its failures.** A company that collapses gets quietly removed and something healthier takes its place. The index carries on with a clean record — the failure is simply no longer in the list.",
-          "It's a school boasting about its average exam results while quietly moving on the students who were struggling. The average is real. It just isn't a promise to any individual pupil."
+          "It's a school boasting about its average exam results while quietly moving on the pupils who were struggling. The average is real. It just isn't a promise to anyone sitting in the classroom."
         ],
         terms: [
           { term: 'Index',
@@ -124,7 +124,7 @@
             like: 'A league table. Teams get relegated, and the league average never mourns them.' },
           { term: 'Survivorship',
             plain: 'A record looking better than reality because the failures were removed from it.',
-            like: 'A school\'s average grade, after the strugglers have quietly left.' },
+            like: 'A school\'s average grade, after the strugglers have quietly been moved on.' },
           { term: 'Delisting',
             plain: 'A company leaving the exchange — through takeover, failure to meet requirements, or collapse.',
             like: 'A shop with the shutters permanently down. It is not reopening.' },
