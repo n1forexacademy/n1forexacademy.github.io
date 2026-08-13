@@ -27,6 +27,9 @@ then the next opens. The module test unlocks only when every lesson is passed.
 Plus a **Trading Floor** — a simulated market with a full account model, a risk guard that steps
 down from enforcing to advisory to off, and 7 assessed drills.
 
+The equities and bonds tracks add 7 **analysis labs** — worked exercises over supplied data, because
+those tracks turn on judgement rather than execution and the simulator has no shares or bonds. See §5.
+
 ---
 
 ## 2. File map
@@ -44,6 +47,7 @@ assets/
   tracks.css            Track selector strip.
   lesson.css            Lesson flow (read → check → next).
   tools.css             Calculators.
+  labs.css              Analysis lab data blocks and answer widgets.
   present.css           Presenter mode (deliberately dark, whatever the theme).
   dashboard.css         Instructor dashboard.
   illustrations.css     Platform illustrations.
@@ -59,6 +63,7 @@ assets/
   engine.js             SIMULATION CORE. Market feed, account/margin model, risk guard. No DOM.
   terminal.js           Terminal UI. Canvas chart, order ticket, panels, guard modal.
   tools.js              Sixteen trader calculators.
+  labs.js               Analysis lab renderer and marking. Read its header note.
 
 worker/                 OPTIONAL backend. Only needed for server mode (§7).
   src/index.js          Auth + progress API (Cloudflare Worker).
@@ -85,7 +90,10 @@ content/
   modules/mN.js         One file per module. Lazy. 1–12 forex, 101–108
                         equities, 201–206 bonds.
   lessons/lN.js         One file per module's lessons. Lazy.
-  drills.js             The 7 assessed trading drills.
+  drills.js             The 7 assessed simulator drills (forex only).
+  labs.js               The 7 analysis labs for equities and bonds. Worked
+                        exercises, not simulator sessions — see §5 and
+                        assets/labs.js for why.
   illustrations.js      Annotated drawings of the academy's own terminal.
   brand.js              Logo, seal, signature, signatory details.
 ```
@@ -101,7 +109,7 @@ listings and route guards all render from it, so navigating the path fetches
 nothing. Only opening a module pulls its slides, lab, quiz and lessons.
 
 ```
-EAGER   catalog.js · tracks.js · path.js · drills.js · roster.js
+EAGER   catalog.js · tracks.js · path.js · drills.js · labs.js · roster.js
         illustrations.js · brand.js                          ~52 KB
 LAZY    content/modules/mN.js + content/lessons/lN.js    ~21 KB each
 ```
@@ -141,7 +149,8 @@ Content files must load before `app.js`. If you add a file, add its `<script>` t
 | `window.TRACKS` | `tracks.js` | Track definitions and their stages |
 | `window.Content` | `loader.js` | `loadModule`, `loadTrack`, `meta`, `isModuleLoaded` |
 | `window.Path` | `progress-engine.js` | Track gating and step state |
-| `window.DRILLS` | `drills.js` | Array of drill definitions |
+| `window.DRILLS` | `drills.js` + `labs.js` | Simulator drills and analysis labs. `kind: 'analysis'` marks a lab. |
+| `window.Labs` | `labs.js` | `isLab`, `mount` — renderer for analysis labs |
 | `window.ROSTER` | `roster.js` | Cohort name, instructor code, student seats |
 | `window.FX` | `engine.js` | `Feed`, `Account`, `RiskGuard`, `INSTRUMENTS`, `pipValue` |
 | `window.FXTerminal` | `terminal.js` | Terminal UI constructor |
@@ -335,6 +344,48 @@ Append to `content/drills.js`:
 
 `test()` runs continuously against live account state. Keep it cheap — it is called several times
 a second.
+
+### An analysis lab
+
+The simulator carries four instruments — EURUSD, GBPUSD, USDJPY, XAUUSD. It has no shares, no
+order book, no earnings gaps and no bonds, so the equities and bonds tracks cannot have terminal
+drills. Adding those instruments to the engine would be the wrong fix: those tracks turn on
+judgement rather than execution, and a faked order book teaches the wrong thing.
+
+So a lab is a **worked exercise over supplied data**. Append to `content/labs.js`:
+
+```js
+{
+  id, module, kind: 'analysis',
+  title, brief,
+  dataset: [                       // what the student reasons about
+    { type: 'note',   body },
+    { type: 'table',  title, head: [], rows: [[]], foot },
+    { type: 'ladder', title, offers: [{price, size}], bids: [{price, size}], foot }
+  ],
+  tasks: [
+    { kind: 'calc',   q, answer, tol, unit, prefix, placeholder, hint, why },
+    { kind: 'choice', q, options: [], a, why },        // a = INDEX
+    { kind: 'sort',   q, buckets: [], items: [{label, bucket}], why }
+  ],
+  onPass
+}
+```
+
+Then add a `{ type: 'drill', ref: '<id>' }` step to the right stage in `content/tracks.js`. Labs
+record into `progress.drills` exactly as terminal drills do, so the path engine, the certificates
+and the Trading Floor listing need no changes.
+
+- **All tasks must be right to pass.** Retries are unlimited and the reasoning shows either way —
+  a lab that only reports a score teaches nothing.
+- `calc` answers are marked within `tol`. Input is cleaned of commas, spaces and currency symbols
+  before parsing, because students paste from a calculator.
+- **Every figure must be re-derivable from the `dataset`.** If you change a number in a table you
+  must re-derive every `answer` that reads it, or correct work gets marked wrong. Write the
+  arithmetic into `why` so the student sees it and the next editor can check it.
+
+`assets/labs.js` holds the renderer; `assets/labs.css` the three answer widgets. Both are eager
+(the Trading Floor needs `Labs.isLab` to list cards), so keep them small.
 
 **Design drills so they cannot be passed by luck.** Assess on process (correct sizing, blocked
 attempts, drawdown, compliance), not on profit. Note that `expectancy` deliberately passes on
