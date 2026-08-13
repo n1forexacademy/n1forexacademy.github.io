@@ -205,7 +205,16 @@
           cls: exp > 0 ? 'good' : 'bad',
           note: exp <= 0 ? 'negative edge — ruin is a matter of time, not chance' : '' },
         { label: 'Method', value: sims.toLocaleString() + ' simulated runs of ' + n + ' trades',
-          note: 'results shift slightly each time — that variance is the lesson' }
+          note: 'results shift slightly each time — that variance is the lesson' },
+        // A constant edge with no costs compounds absurdly at high risk. Say so,
+        // or the model quietly argues FOR over-sizing — the opposite of Module 10.
+        { label: 'Read this before believing the return',
+          value: median > 5 ? 'Model is idealised' : 'Within sane range',
+          cls: median > 5 ? 'warn' : 'good',
+          note: median > 5
+            ? 'This assumes a fixed edge that never decays, no spread or commission, and perfectly divisible size. ' +
+              'Real returns are far lower. Judge this calculator by the ruin percentage and the drawdown, not the profit.'
+            : 'Costs and a decaying edge will still reduce this in practice.' }
       ];
     }
   },
