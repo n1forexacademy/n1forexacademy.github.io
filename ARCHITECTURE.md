@@ -70,6 +70,12 @@ worker/                 OPTIONAL backend. Only needed for server mode (§7).
 tools/
   build-catalog.mjs     REGENERATES content/catalog.js. Run after editing a
                         module's title, tagline, level or duration.
+  bump-assets.mjs       Stamps ?v=N on every asset URL. RUN BEFORE EVERY DEPLOY
+                        that touches assets/ or content/, or students keep the
+                        cached old version.
+  check-teaching.mjs    Reports which modules teach vs still fall back to
+                        slides, and flags instructor wording leaking into
+                        student-facing text. Exits non-zero on any problem.
 
 content/
   roster.js             API_BASE switch + local-mode access codes. EDIT THIS.
@@ -255,8 +261,8 @@ to update. Module ids: 1–12 forex, 101–108 equities, 201–206 bonds.
 ```js
 {
   id, title, tagline, level, duration,
-  objectives: [],                 // "by the end the student can…"
-  misconceptions: [],             // attack head-on
+  objectives: [],                 // SHOWN TO STUDENTS — write in plain second person
+  misconceptions: [],             // instructor only, gated behind Auth.isInstructor()
   glossary: [{t, d}],             // feeds the site-wide glossary
   slides:  [{ kicker, title, bullets:[], body, visual, note }],
   practical: { title, time, intro, setup:[], steps:[{h,d}], figure,
@@ -270,6 +276,44 @@ to update. Module ids: 1–12 forex, 101–108 equities, 201–206 bonds.
 - `visual` / `figure` take raw inline SVG. Use the `.fig` classes (`.up`, `.dn`, `.acc`, `.dash`,
   `.lbl`, `.lbl-sm`) so diagrams follow the light/dark theme.
 - `note` is the instructor note — hidden with the **N** key during presenting.
+
+**What students see and what they do not.** `slides`, `misconceptions`, `note`, `practical.rubric`
+and `homework` are instructor material, gated behind `Auth.isInstructor()` in `renderLesson` and
+`renderNotes` (`assets/app.js`). `objectives` and `glossary` are shown to *both*, so they must read
+as plain second-person English — no "the student can", no jargon defined with more jargon. Two
+separate leaks of instructor content into the student view have already happened; both were caught
+by reading the live student page rather than the source.
+
+### A lesson file
+
+`content/lessons/lN.js` is what a student actually reads. **Every lesson needs a `teach` block.**
+Without one, `assets/lesson.js` falls back to paging the student through the presenter slides —
+which is precisely what they must never see.
+
+```js
+window.LESSONS[N] = [{
+  title: 'Plain-language lesson title',
+  slides: [0, 1],                    // instructor only; students never page these
+  teach: {
+    lead:  ['paragraph', 'paragraph with **bold**'],   // teach BEFORE testing
+    terms: [{ term, plain, like }],  // `like` is the everyday comparison — required
+    close: ['paragraph', '…']
+  },
+  check: [{ q, options: [], a, why }]   // a = INDEX of the correct option
+}];
+```
+
+House style, established across all 26 modules and worth keeping:
+
+- Second person, addressed to one student. Never "the student", never "students".
+- **Everyday comparison first, jargon second.** Every `terms` entry carries a `like`.
+- State the correction rather than hedging it. No repeated risk disclaimers — the site footer
+  carries the standing one, and students told us the constant repetition was wearing.
+- Reuse earlier analogies as callbacks across modules; the tracks are meant to build.
+
+Run `node tools/check-teaching.mjs` after editing. It reports any module still falling back to
+slides, missing `like` comparisons, instructor-register wording, and answer indices pointing at
+nothing. It exits non-zero on any problem.
 
 ### A drill
 
@@ -561,8 +605,41 @@ empty and output directory `/`. The site itself needs no changes.
 
 ## 8. Verifying a change
 
-No test framework. Verify in the browser console — the engine is deliberately DOM-free so you can
-drive it directly. Serve locally first:
+**Content changes.** Two scripts, both cheap, both worth running every time:
+
+```bash
+node tools/check-teaching.mjs
+```
+
+Reports which modules teach and which still fall back to slides, plus structural problems. Should
+say `26/26 modules teach. All written.` and exit 0. Add `--todo` for just the unwritten ids.
+
+```bash
+node tools/bump-assets.mjs
+```
+
+**Run this before every deploy that touches `assets/` or `content/`.** GitHub Pages sets its own
+cache headers, so without a new `?v=` a returning student keeps the old lesson text. This bit us
+three times during development.
+
+**Verifying the live student view.** Screenshots do not work reliably here (the Browser pane needs
+a visible compositing surface), so read the rendered text instead with `get_page_text`, or drive
+the renderers directly in the page console. To inspect locked modules without faking server state,
+wrap `Auth.progress` so it returns unlocked progress for reads and **swallows every patch** — then
+reload to discard. Nothing reaches the database:
+
+```js
+var real = Auth.progress.bind(Auth);
+Auth.progress = function (patch) {
+  if (patch) return real();                      // writes go nowhere
+  var p = real() || {}; p.overrides = {};
+  (window.CATALOG || []).forEach(function (c) { p.overrides['m' + c.id] = 1; });
+  return p;
+};
+```
+
+**Engine changes.** No test framework. Verify in the browser console — the engine is deliberately
+DOM-free so you can drive it directly. Serve locally first:
 
 ```bash
 cd C:/Users/Jonathan/Forex_Teacher && python -m http.server 8777
