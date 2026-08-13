@@ -92,11 +92,14 @@ roster only shows activity from the machine you're looking at.
 
 Needs a web server — opening `index.html` directly (`file://`) will not load the content scripts.
 
-```bash
-cd C:/Users/Jonathan/Forex_Teacher && python -m http.server 8777
+```powershell
+cd C:\Users\Jonathan\Forex_Teacher; python -m http.server 8777
 ```
 
 Then http://localhost:8777
+
+> **Windows PowerShell 5.1 does not support `&&`.** Use `;` to chain, or run commands one per line.
+> Commands in this repo are written PowerShell-first for that reason.
 
 ---
 
@@ -104,8 +107,8 @@ Then http://localhost:8777
 
 Push to `main`; Pages rebuilds in 30–60 seconds.
 
-```bash
-git add -A && git commit -m "Update course" && git push
+```powershell
+git add -A; git commit -m "Update course"; git push
 ```
 
 Because the repo is named `<username>.github.io`, Pages is on automatically — no Settings change.

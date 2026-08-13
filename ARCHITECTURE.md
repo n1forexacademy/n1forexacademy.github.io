@@ -274,22 +274,35 @@ calls; it does not need to host the site. That is why `n1forexacademy.github.io`
 
 All of this is free tier. Run from the `worker/` directory.
 
-```bash
-cd C:/Users/Jonathan/Forex_Teacher/worker && npx wrangler login
+> **Windows PowerShell users:** PowerShell 5.1 does not support `&&` as a command separator.
+> Every command below is therefore on its own line — run them one at a time. (Use `;` if you want
+> to chain unconditionally.)
+
+```powershell
+cd C:\Users\Jonathan\Forex_Teacher\worker
 ```
 
-```bash
+```powershell
+npx wrangler login
+```
+
+```powershell
 npx wrangler d1 create n1-academy
 ```
 
-Copy the printed `database_id` into `worker/wrangler.toml`, then create the tables and set the
-admin key (pick a long random string — it protects enrolment, not student sign-in):
+Copy the printed `database_id` into `worker/wrangler.toml`, then create the tables:
 
-```bash
-npx wrangler d1 execute n1-academy --remote --file=./schema.sql && npx wrangler secret put ADMIN_KEY
+```powershell
+npx wrangler d1 execute n1-academy --remote --file=./schema.sql
 ```
 
-```bash
+Set the admin key — pick a long random string. It protects *enrolment*, not student sign-in:
+
+```powershell
+npx wrangler secret put ADMIN_KEY
+```
+
+```powershell
 npx wrangler deploy
 ```
 
@@ -303,12 +316,24 @@ Commit and push. The site switches to server mode on the next Pages build.
 
 ### 7.2 Enrolling people
 
-There is no signup form by design — you issue codes. Replace `$KEY` with your `ADMIN_KEY` and
-`$API` with the Worker URL.
+There is no signup form by design — you issue codes.
 
-```bash
-curl -X POST "$API/api/enroll" -H "x-admin-key: $KEY" -H "Content-Type: application/json" -d '{"id":"instructor","name":"Instructor","code":"a-long-private-code","role":"instructor"}'
+In **PowerShell** (note `Invoke-RestMethod`, not curl — PowerShell aliases `curl` to something else
+and the flags will not work):
+
+```powershell
+$API="https://n1-academy-api.YOUR-SUBDOMAIN.workers.dev"; $KEY="your-admin-key"
 ```
+
+```powershell
+Invoke-RestMethod -Uri "$API/api/enroll" -Method Post -Headers @{"x-admin-key"=$KEY} -ContentType "application/json" -Body '{"id":"instructor","name":"Instructor","code":"a-long-private-code","role":"instructor"}'
+```
+
+```powershell
+Invoke-RestMethod -Uri "$API/api/enroll" -Method Post -Headers @{"x-admin-key"=$KEY} -ContentType "application/json" -Body '{"id":"student-1","name":"Sam","code":"another-long-code"}'
+```
+
+In **Git Bash / macOS / Linux**:
 
 ```bash
 curl -X POST "$API/api/enroll" -H "x-admin-key: $KEY" -H "Content-Type: application/json" -d '{"id":"student-1","name":"Sam","code":"another-long-code"}'
@@ -320,8 +345,8 @@ because progress is keyed on it.
 
 To remove someone (deactivates the account and kills their live sessions):
 
-```bash
-curl -X POST "$API/api/revoke" -H "x-admin-key: $KEY" -H "Content-Type: application/json" -d '{"id":"student-1"}'
+```powershell
+Invoke-RestMethod -Uri "$API/api/revoke" -Method Post -Headers @{"x-admin-key"=$KEY} -ContentType "application/json" -Body '{"id":"student-1"}'
 ```
 
 ### 7.3 Operational notes
@@ -452,8 +477,10 @@ the progress bar advances, and check no console errors.
 
 Push to `main`; GitHub Pages rebuilds in 30–60s.
 
-```bash
-cd C:/Users/Jonathan/Forex_Teacher && git add -A && git commit -m "message" && git push
+PowerShell (no `&&` — use `;` or separate lines):
+
+```powershell
+cd C:\Users\Jonathan\Forex_Teacher; git add -A; git commit -m "message"; git push
 ```
 
 Auth on this machine is GitHub CLI (`gh auth login`) as `n1forexacademy`, stored in Windows
