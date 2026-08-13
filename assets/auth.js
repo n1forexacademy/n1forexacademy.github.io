@@ -136,6 +136,7 @@
           var m = cache.modules[patch.module] || {};
           if (patch.visited) m.visited = true;
           if (typeof patch.quiz === 'number') m.quiz = Math.max(m.quiz || 0, patch.quiz);
+          if (patch.lessons) m.lessons = Object.assign({}, m.lessons || {}, patch.lessons);
           cache.modules[patch.module] = m;
         }
         if (patch.drill) cache.drills[patch.drill] = { passed: !!patch.passed, at: Date.now() };

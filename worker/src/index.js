@@ -152,6 +152,13 @@ function mergeProgress(current, patch, allowInstructorFields) {
     const m = p.modules[key] || {};
     if (patch.visited) m.visited = true;
     if (typeof patch.quiz === 'number') m.quiz = Math.max(m.quiz || 0, patch.quiz);
+    // Lesson-level checks. Merge rather than replace, and never un-pass one.
+    if (patch.lessons && typeof patch.lessons === 'object') {
+      m.lessons = Object.assign({}, m.lessons || {});
+      for (const k of Object.keys(patch.lessons)) {
+        if (patch.lessons[k]) m.lessons[k] = true;
+      }
+    }
     p.modules[key] = m;
   }
   if (patch.drill) {

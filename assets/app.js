@@ -256,6 +256,9 @@
     tab = tab || 'slides';
     Auth.progress({ module: m.id, visited: true });
 
+    // Modules with authored lessons are delivered lesson-by-lesson.
+    var hasLessons = !!(window.Lessons && Lessons.forModule(m.id));
+
     var prev = MODULES.find(function (x) { return x.id === id - 1; });
     var next = MODULES.find(function (x) { return x.id === id + 1; });
 
@@ -269,7 +272,10 @@
         '<span class="chip">' + m.slides.length + ' slides</span></div>' +
       '</div>' +
       '<div class="tabs" role="tablist">' +
-        ['slides|Slides', 'lesson|Practical Lab', 'quiz|Quiz', 'notes|Objectives &amp; Terms'].map(function (t) {
+        (hasLessons
+          ? ['slides|Lessons', 'lab|Practical Lab', 'quiz|Module test', 'notes|Objectives &amp; Terms']
+          : ['slides|Slides', 'lab|Practical Lab', 'quiz|Quiz', 'notes|Objectives &amp; Terms']
+        ).map(function (t) {
           var p = t.split('|');
           return '<button role="tab" data-tab="' + p[0] + '" aria-selected="' + (tab === p[0]) + '">' + p[1] + '</button>';
         }).join('') +
@@ -285,9 +291,22 @@
     });
 
     var panel = document.getElementById('tabpanel');
-    if (tab === 'slides') renderDeck(m, panel);
-    else if (tab === 'lesson') renderLesson(m, panel);
-    else if (tab === 'quiz') renderQuiz(m, panel);
+    if (tab === 'slides') {
+      if (hasLessons && !Auth.isInstructor()) Lessons.renderList(m, panel);
+      else renderDeck(m, panel);
+    }
+    else if (tab === 'lab') renderLesson(m, panel);
+    else if (tab === 'quiz') {
+      // The module test stays shut until every lesson is passed.
+      if (hasLessons && !Auth.isInstructor() && !Lessons.complete(m.id)) {
+        var left = Lessons.forModule(m.id).length - Lessons.currentIndex(m.id);
+        panel.innerHTML = '<div class="panel locked-panel"><div class="lock-big">🔒</div>' +
+          '<h2>Module test not open yet</h2>' +
+          '<p>You have <b>' + left + '</b> lesson' + (left === 1 ? '' : 's') + ' left. Each one ends in a short ' +
+          'check, and the test opens when they are all passed.</p>' +
+          '<p><a class="btn primary" href="#/m/' + m.id + '" style="display:inline-block;text-decoration:none">Back to the lessons</a></p></div>';
+      } else renderQuiz(m, panel);
+    }
     else renderNotes(m, panel);
   }
 
@@ -621,6 +640,18 @@
 
     if (parts[0] !== 'drill') killTerminal();
 
+    if (parts[0] === 'm' && parts[1] && parts[2] === 'lesson' && parts[3] !== undefined) {
+      var lm = MODULES.find(function (x) { return x.id === +parts[1]; });
+      if (!lm) { app.innerHTML = '<div class="panel"><h2>Module not found</h2></div>'; return; }
+      if (!Auth.isInstructor() && !Path.moduleUnlocked(+parts[1], Auth.progress())) {
+        return lockedNotice('Modules', 'Module ' + parts[1] + ' — ' + lm.title);
+      }
+      app.innerHTML = '<div class="crumb"><a href="#/">Path</a> / <a href="#/m/' + lm.id + '">' +
+        esc(lm.title) + '</a> / Lesson</div><div id="lessonHost"></div>';
+      Lessons.renderLesson(lm, +parts[3], document.getElementById('lessonHost'));
+      window.scrollTo(0, 0);
+      return;
+    }
     if (parts[0] === 'm' && parts[1]) viewModule(+parts[1], parts[2]);
     else if (parts[0] === 'drills') viewDrills();
     else if (parts[0] === 'drill' && parts[1]) viewDrill(parts[1]);

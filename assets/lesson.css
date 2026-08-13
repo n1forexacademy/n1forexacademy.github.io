@@ -1,0 +1,54 @@
+/* N1 Forex Academy — lesson flow styles. */
+
+.lsn-list{display:flex;flex-direction:column;gap:.5rem;margin:1rem 0 1.4rem}
+.lsn{
+  display:flex;gap:.85rem;align-items:center;padding:.85rem 1rem;
+  background:var(--surface-2);border:1px solid var(--line);border-radius:12px;
+  color:var(--ink);text-decoration:none;
+}
+a.lsn:hover{text-decoration:none;border-color:var(--gold);transform:translateY(-1px)}
+.lsn.current{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--surface))}
+.lsn.done{border-color:color-mix(in srgb,var(--bull) 40%,transparent)}
+.lsn.locked{opacity:.55}
+.lsn-i{
+  flex:0 0 auto;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;
+  font-size:.85rem;font-weight:700;background:var(--surface);border:1px solid var(--line);color:var(--ink-3);
+}
+.lsn.done .lsn-i{background:var(--bull);border-color:var(--bull);color:#fff}
+.lsn.current .lsn-i{background:var(--accent);border-color:var(--accent);color:#fff}
+.lsn-b{display:flex;flex-direction:column;gap:.12rem;min-width:0;flex:1}
+.lsn-k{
+  font-family:var(--mono);font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:700;
+}
+.lsn-t{font-size:.96rem;font-weight:600}
+.lsn-r{font-size:.8rem;color:var(--ink-3)}
+
+.lsn-final{
+  display:flex;gap:.85rem;align-items:center;padding:1rem;border-radius:12px;
+  border:1px dashed var(--line);background:var(--surface-2);
+}
+.lsn-final.open{border-style:solid;border-color:var(--gold);background:color-mix(in srgb,var(--gold) 8%,var(--surface))}
+.lsn-final.open .lsn-i{background:var(--gold);border-color:var(--gold);color:#fff}
+.lsn-final.shut{opacity:.65}
+.lsn-final .btn{flex:0 0 auto;text-decoration:none}
+
+/* reading a lesson */
+.lsn-head{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:.7rem;flex-wrap:wrap}
+.lsn-head h2{margin:.15rem 0 0;font-size:1.35rem}
+.lsn-page{font-family:var(--mono);font-size:.8rem;color:var(--ink-3)}
+.lsn-dots{display:flex;gap:.28rem;margin-bottom:.9rem}
+.lsn-dots i{
+  flex:1;height:4px;border-radius:99px;background:var(--surface-2);
+  border:1px solid var(--line);transition:background .25s ease;
+}
+.lsn-dots i.on{background:var(--accent);border-color:var(--accent)}
+.lsn-slide{min-height:clamp(280px,42vh,440px)}
+.lsn-nav{display:flex;justify-content:space-between;gap:.6rem;margin-top:1rem;flex-wrap:wrap}
+.lsn-nav .btn{text-decoration:none}
+.lsn-nav a.btn{display:inline-flex;align-items:center}
+
+@media (max-width:600px){
+  .lsn-final{flex-wrap:wrap}
+  .lsn-final .btn{width:100%}
+}
