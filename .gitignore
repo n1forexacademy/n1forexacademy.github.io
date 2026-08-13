@@ -2,3 +2,9 @@ node_modules/
 .wrangler/
 .dev.vars
 .env
+
+# Never commit secrets. Anything matching these stays local.
+*secret*
+*SECRET*
+*_KEY.md
+*.key

@@ -231,8 +231,259 @@
       });
     },
 
-    /* Instructor view: central roster in server mode, this-device only in local mode. */
+    /* Direct API access for the admin panel. */
+    call: function (path, opts) { return api(path, opts); },
+
+    /* Student self-enrolment from an invite link: #/join/<token> */
+    renderJoin: async function (mount, token, onDone) {
+      var self = this;
+      mount.innerHTML = '<div class="gate"><div class="gate-card"><p class="muted">Checking your invite…</p></div></div>';
+
+      if (!serverMode) {
+        mount.innerHTML = '<div class="gate"><div class="gate-card"><h1>Invites unavailable</h1>' +
+          '<p class="gate-sub">This academy is running without a server, so self-enrolment is switched off. ' +
+          'Ask your instructor for an access code.</p>' +
+          '<p><a class="btn primary wide" href="#/" style="display:block;text-align:center;text-decoration:none">Back to sign in</a></p>' +
+          '</div></div>';
+        return;
+      }
+
+      var info;
+      try { info = await api('/api/invite/' + encodeURIComponent(token)); }
+      catch (e) { info = { valid: false, reason: 'Could not reach the academy server.' }; }
+
+      if (!info.valid) {
+        mount.innerHTML = '<div class="gate"><div class="gate-card">' +
+          '<div class="gate-brand"><span class="brand-mark">N1</span><b>N1 Forex Academy</b></div>' +
+          '<h1>Invite not valid</h1><p class="gate-sub">' + esc(info.reason || 'This link cannot be used.') + '</p>' +
+          '<p class="gate-note">Invite links expire and can only be used a limited number of times. ' +
+          'Ask your instructor for a fresh one.</p>' +
+          '<a class="btn primary wide" href="#/" style="display:block;text-align:center;text-decoration:none">Go to sign in</a>' +
+          '</div></div>';
+        return;
+      }
+
+      mount.innerHTML =
+        '<div class="gate"><div class="gate-card">' +
+          '<div class="gate-brand"><span class="brand-mark">N1</span><b>N1 Forex Academy</b></div>' +
+          '<h1>Create your account</h1>' +
+          '<p class="gate-sub">' + esc(info.label) + '</p>' +
+          '<form id="jForm">' +
+            '<label>Your full name<input id="jName" autocomplete="name" placeholder="e.g. Sam Okoye" required></label>' +
+            '<label>Choose a password<input id="jCode" type="password" autocomplete="new-password" placeholder="At least 8 characters" required></label>' +
+            '<label>Confirm password<input id="jCode2" type="password" autocomplete="new-password" required></label>' +
+            '<button class="btn primary wide" type="submit" id="jGo">Create account</button>' +
+            '<p class="gate-err" id="jErr" hidden></p>' +
+          '</form>' +
+          '<p class="gate-note"><b>Choose something only you know.</b> This password is how you sign in — your instructor ' +
+          'never sees it and cannot recover it, but they can reset it for you. Progress is saved to your account, so you ' +
+          'can carry on from any device. The course content itself is public; signing in tracks your progress.</p>' +
+        '</div>' +
+        '<p class="gate-risk">Trading FX and CFDs on margin carries a high risk of losing all deposited funds. ' +
+        'Everything in this academy is educational and simulated. No real money is ever involved.</p></div>';
+
+      var f = mount.querySelector('#jForm'), err = mount.querySelector('#jErr'), go = mount.querySelector('#jGo');
+      f.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        err.hidden = true;
+        var name = mount.querySelector('#jName').value.trim();
+        var c1 = mount.querySelector('#jCode').value, c2 = mount.querySelector('#jCode2').value;
+        if (c1 !== c2) { err.textContent = 'The two passwords do not match.'; err.hidden = false; return; }
+        if (c1.length < 8) { err.textContent = 'Use at least 8 characters.'; err.hidden = false; return; }
+
+        go.disabled = true; go.textContent = 'Creating…';
+        try {
+          var r = await api('/api/signup', { method: 'POST', body: { token: token, name: name, code: c1 } });
+          store(TOKEN_KEY, r.token);
+          store(SESSION_KEY, r.user);
+          location.hash = '#/';
+          location.reload();
+        } catch (e2) {
+          go.disabled = false; go.textContent = 'Create account';
+          err.textContent = e2.message || 'Could not create the account.';
+          err.hidden = false;
+        }
+      });
+      if (onDone) onDone();
+    },
+
+    /* Instructor admin panel. */
     renderInstructor: async function (mount) {
+      if (!serverMode) return this.renderInstructorLocal(mount);
+      var self = this;
+      var origin = location.origin + location.pathname;
+
+      mount.innerHTML =
+        '<div class="crumb"><a href="#/">Modules</a> / Admin</div>' +
+        '<div class="module-head"><h1>Admin</h1>' +
+        '<p class="lede">Students, invite links and progress — live from the academy database.</p></div>' +
+        '<div class="tabs" role="tablist">' +
+          '<button data-a="students" aria-selected="true">Students</button>' +
+          '<button data-a="invites" aria-selected="false">Invite links</button>' +
+        '</div><div id="adminPane"><p class="muted">Loading…</p></div>';
+
+      var pane = mount.querySelector('#adminPane');
+      mount.querySelectorAll('.tabs button[data-a]').forEach(function (b) {
+        b.onclick = function () {
+          mount.querySelectorAll('.tabs button[data-a]').forEach(function (x) { x.setAttribute('aria-selected', 'false'); });
+          b.setAttribute('aria-selected', 'true');
+          b.dataset.a === 'students' ? students() : invites();
+        };
+      });
+
+      function err(e) {
+        pane.innerHTML = '<div class="panel"><div class="callout danger"><p><b>Could not load.</b> ' +
+          esc((e && e.message) || 'The academy server did not respond.') + '</p></div></div>';
+      }
+
+      async function students() {
+        pane.innerHTML = '<div class="panel"><p class="muted">Loading students…</p></div>';
+        var data;
+        try { data = await api('/api/admin/students'); } catch (e) { return err(e); }
+        var totalModules = (window.COURSE || []).length, totalDrills = (window.DRILLS || []).length;
+
+        var rows = (data.students || []).map(function (s) {
+          var mods = Object.keys(s.modules || {}).length;
+          var qk = Object.keys(s.modules || {}).filter(function (k) { return typeof s.modules[k].quiz === 'number'; });
+          var avg = qk.length ? Math.round(qk.reduce(function (a, k) { return a + s.modules[k].quiz; }, 0) / qk.length) : null;
+          var passed = Object.keys(s.drills || {}).filter(function (k) { return s.drills[k].passed; }).length;
+          return '<tr' + (s.active ? '' : ' style="opacity:.45"') + '>' +
+            '<td><b>' + esc(s.name) + '</b>' + (s.role === 'instructor' ? ' <span class="chip">instructor</span>' : '') +
+              '<br><small>' + esc(s.id) + (s.active ? '' : ' — revoked') + '</small></td>' +
+            '<td>' + mods + ' / ' + totalModules + '</td>' +
+            '<td>' + (avg === null ? '—' : avg + '%') + '</td>' +
+            '<td>' + passed + ' / ' + totalDrills + '</td>' +
+            '<td>' + (s.updatedAt ? new Date(s.updatedAt).toLocaleDateString() : '—') + '</td>' +
+            '<td><button class="btn-x" data-reset="' + esc(s.id) + '">Reset code</button> ' +
+              (s.active && s.role !== 'instructor'
+                ? '<button class="btn-x" data-revoke="' + esc(s.id) + '">Revoke</button>' : '') +
+            '</td></tr>';
+        }).join('');
+
+        pane.innerHTML =
+          '<div class="panel">' +
+            '<h2>Students</h2>' +
+            '<div class="table-wrap"><table><thead><tr><th>Student</th><th>Modules</th><th>Avg quiz</th>' +
+            '<th>Drills</th><th>Last active</th><th>Actions</th></tr></thead><tbody>' +
+            (rows || '<tr><td colspan="6"><em>Nobody enrolled yet. Create an invite link.</em></td></tr>') +
+            '</tbody></table></div>' +
+            '<h3>Add someone directly</h3>' +
+            '<p class="muted">Use this if you want to set the code yourself. An invite link is usually better — ' +
+            'the student chooses their own password and you never handle it.</p>' +
+            '<div class="admin-form">' +
+              '<input id="nsName" placeholder="Full name">' +
+              '<input id="nsCode" placeholder="Access code (8+ chars)">' +
+              '<select id="nsRole"><option value="student">Student</option><option value="instructor">Instructor</option></select>' +
+              '<button class="btn primary" id="nsGo">Add</button>' +
+            '</div><p class="admin-msg" id="nsMsg"></p>' +
+          '</div>';
+
+        pane.querySelectorAll('[data-revoke]').forEach(function (b) {
+          b.onclick = async function () {
+            if (!confirm('Revoke ' + b.dataset.revoke + '? They will be signed out and unable to sign back in. Their progress is kept.')) return;
+            try { await api('/api/admin/revoke', { method: 'POST', body: { id: b.dataset.revoke } }); students(); }
+            catch (e) { alert(e.message); }
+          };
+        });
+        pane.querySelectorAll('[data-reset]').forEach(function (b) {
+          b.onclick = async function () {
+            var code = prompt('New access code for ' + b.dataset.reset + ' (8+ characters).\nGive it to them privately — it is not shown again.');
+            if (!code) return;
+            try { await api('/api/admin/reset', { method: 'POST', body: { id: b.dataset.reset, code: code } });
+                  alert('Code updated. They have been signed out and must use the new one.'); }
+            catch (e) { alert(e.message); }
+          };
+        });
+        pane.querySelector('#nsGo').onclick = async function () {
+          var msg = pane.querySelector('#nsMsg');
+          try {
+            await api('/api/admin/students', { method: 'POST', body: {
+              name: pane.querySelector('#nsName').value.trim(),
+              code: pane.querySelector('#nsCode').value,
+              role: pane.querySelector('#nsRole').value
+            }});
+            msg.textContent = 'Added.'; msg.className = 'admin-msg ok';
+            students();
+          } catch (e) { msg.textContent = e.message; msg.className = 'admin-msg bad'; }
+        };
+      }
+
+      async function invites() {
+        pane.innerHTML = '<div class="panel"><p class="muted">Loading invites…</p></div>';
+        var data;
+        try { data = await api('/api/admin/invites'); } catch (e) { return err(e); }
+
+        var rows = (data.invites || []).map(function (i) {
+          var dead = i.revoked || (i.expires_at && i.expires_at < Date.now()) || i.uses >= i.max_uses;
+          return '<tr' + (dead ? ' style="opacity:.45"' : '') + '>' +
+            '<td><b>' + esc(i.label) + '</b><br><small>' + esc(i.id) + '</small></td>' +
+            '<td>' + i.uses + ' / ' + i.max_uses + '</td>' +
+            '<td>' + (i.expires_at ? new Date(i.expires_at).toLocaleDateString() : 'never') + '</td>' +
+            '<td>' + (i.revoked ? 'revoked' : dead ? 'used up' : 'active') + '</td>' +
+            '<td>' + (i.revoked ? '' : '<button class="btn-x" data-inv="' + esc(i.id) + '">Revoke</button>') + '</td></tr>';
+        }).join('');
+
+        pane.innerHTML =
+          '<div class="panel">' +
+            '<h2>Invite links</h2>' +
+            '<p>Send a link to a student. They open it, choose their own password, and their account is created. ' +
+            'You never see or handle their password.</p>' +
+            '<div class="admin-form">' +
+              '<input id="ivLabel" placeholder="Label, e.g. October cohort">' +
+              '<input id="ivUses" type="number" min="1" max="200" value="1" title="How many people may use this link">' +
+              '<input id="ivDays" type="number" min="1" max="365" value="14" title="Days until it expires">' +
+              '<button class="btn primary" id="ivGo">Create link</button>' +
+            '</div>' +
+            '<div id="ivOut"></div>' +
+            '<div class="table-wrap"><table><thead><tr><th>Label</th><th>Used</th><th>Expires</th>' +
+            '<th>Status</th><th></th></tr></thead><tbody>' +
+            (rows || '<tr><td colspan="5"><em>No invite links yet.</em></td></tr>') + '</tbody></table></div>' +
+            '<div class="callout warn"><p>The link is shown <b>once</b>, right after you create it. It is stored hashed, ' +
+            'so it cannot be shown again — create a new one if you lose it.</p></div>' +
+          '</div>';
+
+        pane.querySelectorAll('[data-inv]').forEach(function (b) {
+          b.onclick = async function () {
+            if (!confirm('Revoke this invite link? Anyone holding it will no longer be able to join.')) return;
+            try { await api('/api/admin/invites/revoke', { method: 'POST', body: { id: b.dataset.inv } }); invites(); }
+            catch (e) { alert(e.message); }
+          };
+        });
+        pane.querySelector('#ivGo').onclick = async function () {
+          try {
+            var r = await api('/api/admin/invites', { method: 'POST', body: {
+              label: pane.querySelector('#ivLabel').value.trim(),
+              maxUses: pane.querySelector('#ivUses').value,
+              expiresDays: pane.querySelector('#ivDays').value
+            }});
+            var link = origin + '#/join/' + r.token;
+            pane.querySelector('#ivOut').innerHTML =
+              '<div class="callout good"><p><b>Link created — copy it now.</b></p>' +
+              '<div class="hashrow"><input id="ivLink" readonly value="' + esc(link) + '">' +
+              '<button class="btn" id="ivCopy">Copy</button></div></div>';
+            pane.querySelector('#ivLink').select();
+            pane.querySelector('#ivCopy').onclick = function () {
+              navigator.clipboard.writeText(link).then(function () {
+                pane.querySelector('#ivCopy').textContent = 'Copied ✓';
+              });
+            };
+            var t = pane.querySelector('#ivOut').innerHTML;
+            invites();
+            pane.querySelector('#ivOut').innerHTML = t;
+            pane.querySelector('#ivCopy').onclick = function () {
+              navigator.clipboard.writeText(link).then(function () {
+                pane.querySelector('#ivCopy').textContent = 'Copied ✓';
+              });
+            };
+          } catch (e) { alert(e.message); }
+        };
+      }
+
+      students();
+    },
+
+    /* Local mode fallback: this-device roster and the code hashing tool. */
+    renderInstructorLocal: async function (mount) {
       var totalModules = (window.COURSE || []).length;
       var drills = window.DRILLS || [];
       var self = this;
