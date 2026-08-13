@@ -1,0 +1,98 @@
+/* N1 Forex Academy — presenter mode. Dark by design: a projected screen in a
+   lit room reads better dark, whatever theme the site is using. */
+
+body.pv-open{overflow:hidden}
+
+.pv-root{
+  position:fixed;inset:0;z-index:500;display:flex;flex-direction:column;
+  background:#0A1424;color:#F0F4FA;
+  --pv-accent:#7FB0EF;--pv-gold:#D9B85C;--pv-dim:#8FA0BC;--pv-line:#22374F;
+}
+
+/* top bar */
+.pv-bar{
+  display:flex;align-items:center;gap:.7rem;padding:.5rem .9rem;
+  border-bottom:1px solid var(--pv-line);flex:0 0 auto;
+}
+.pv-mod{font-weight:700;font-size:.9rem}
+.pv-count,.pv-timer{font-family:var(--mono);font-size:.82rem;color:var(--pv-dim)}
+.pv-timer{color:var(--pv-gold)}
+.pv-spacer{flex:1}
+.pv-btn{
+  appearance:none;background:transparent;border:1px solid var(--pv-line);
+  color:var(--pv-dim);border-radius:8px;padding:.3rem .7rem;font:inherit;
+  font-size:.78rem;font-weight:600;cursor:pointer;
+}
+.pv-btn:hover{border-color:var(--pv-accent);color:var(--pv-accent)}
+.pv-btn.pv-x:hover{border-color:#E8705F;color:#E8705F}
+
+.pv-progress{height:3px;background:var(--pv-line);flex:0 0 auto}
+.pv-progress i{display:block;height:100%;background:var(--pv-accent);transition:width .3s ease}
+
+/* the slide itself */
+.pv-stage{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:clamp(1.5rem,5vh,4rem) clamp(2rem,8vw,7rem);overflow:auto;min-height:0;
+}
+.pv-slide{width:100%;max-width:1180px}
+.pv-kicker{
+  font-family:var(--mono);font-size:clamp(.7rem,1.2vw,.9rem);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--pv-gold);font-weight:700;margin-bottom:.9rem;
+}
+.pv-slide h2{
+  font-size:clamp(1.8rem,4.6vw,3.4rem);line-height:1.12;margin:0 0 clamp(1rem,3vh,2rem);
+  letter-spacing:-.02em;
+}
+.pv-slide ul{margin:0;padding-left:1.4em;font-size:clamp(1rem,2vw,1.6rem);line-height:1.55}
+.pv-slide ul li{margin-bottom:.65em;color:#D3DCEA}
+.pv-slide ul li strong{color:#fff}
+.pv-slide code{background:#172946;color:#D9B85C;padding:.1em .4em;border-radius:5px;font-size:.9em}
+.pv-body{font-size:clamp(1rem,1.8vw,1.4rem);color:#D3DCEA}
+.pv-visual{margin-top:clamp(1rem,3vh,2rem);max-width:760px}
+.pv-visual .fig,.pv-visual .ui-fig{max-width:100%}
+
+/* speaker notes */
+.pv-notes{
+  flex:0 0 auto;max-height:26vh;overflow:auto;padding:.8rem 1.2rem;
+  background:#101E33;border-top:1px solid var(--pv-line);
+  font-size:clamp(.82rem,1.1vw,.98rem);line-height:1.6;color:#C3CFE1;
+}
+.pv-notes b{display:block;color:var(--pv-gold);font-size:.7rem;letter-spacing:.12em;
+  text-transform:uppercase;margin-bottom:.35rem}
+.pv-nonote{color:var(--pv-dim);font-style:italic}
+
+/* edge arrows */
+.pv-edge{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:2;
+  appearance:none;background:rgba(255,255,255,.05);border:0;color:#fff;
+  font-size:2.4rem;line-height:1;width:54px;height:90px;cursor:pointer;opacity:.25;
+  transition:opacity .15s ease;
+}
+.pv-edge:hover{opacity:.85;background:rgba(255,255,255,.12)}
+.pv-left{left:0;border-radius:0 10px 10px 0}
+.pv-right{right:0;border-radius:10px 0 0 10px}
+
+/* slide grid */
+.pv-grid{
+  position:absolute;inset:44px 0 0;z-index:5;background:rgba(10,20,36,.97);
+  padding:1.4rem;overflow:auto;display:grid;gap:.7rem;
+  grid-template-columns:repeat(auto-fill,minmax(190px,1fr));align-content:start;
+}
+.pv-thumb{
+  appearance:none;text-align:left;background:#12203A;border:1px solid var(--pv-line);
+  border-radius:10px;padding:.7rem .8rem;color:#D3DCEA;cursor:pointer;font:inherit;
+  display:flex;flex-direction:column;gap:.3rem;min-height:76px;
+}
+.pv-thumb:hover{border-color:var(--pv-accent)}
+.pv-thumb.on{border-color:var(--pv-gold);background:#172946}
+.pv-tn{font-family:var(--mono);font-size:.7rem;color:var(--pv-gold);font-weight:700}
+.pv-tt{font-size:.84rem;line-height:1.35}
+
+/* blackout */
+.pv-black{position:absolute;inset:0;background:#000;z-index:20}
+
+@media (max-width:700px){
+  .pv-edge{width:40px;height:70px;font-size:1.8rem}
+  .pv-stage{padding:1.2rem}
+  .pv-notes{max-height:32vh}
+}

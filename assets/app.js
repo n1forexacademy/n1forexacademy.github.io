@@ -321,7 +321,7 @@
         '<span class="counter" id="deckCount"></span>' +
         '<div class="deck-controls">' +
           '<button class="btn" id="tNotes" aria-pressed="' + deckState.notes + '">Instructor notes</button>' +
-          '<button class="btn" id="tPresent" aria-pressed="false">Present</button>' +
+          '<button class="btn primary" id="tPresent">▶ Present</button>' +
           '<button class="btn" id="tPrint">Print handout</button>' +
         '</div>' +
       '</div>' +
@@ -364,9 +364,8 @@
       draw();
     });
     document.getElementById('tPresent').addEventListener('click', function () {
-      var on = document.body.classList.toggle('presenting');
-      this.setAttribute('aria-pressed', on);
-      this.textContent = on ? 'Exit present' : 'Present';
+      // Full presenter mode: fullscreen stage, speaker notes, slide grid, timer.
+      Present.open(m, deckState.i);
     });
     document.getElementById('tPrint').addEventListener('click', function () { printDeck(m); });
 
