@@ -3,36 +3,44 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>N1 Forex Academy — Slides + Practical Lessons</title>
-<meta name="description" content="A 12-module forex trading curriculum: presenter slides, hands-on practical labs, quizzes and instructor notes.">
+<title>N1 Forex Academy — Slides, Labs and Trading Simulator</title>
+<meta name="description" content="A 12-module forex curriculum with presenter slides, practical labs, assessed trading drills and a risk-managed simulator.">
 <link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/academy.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>">
 </head>
 <body>
 
-<header class="topbar">
+<header class="topbar" id="topbar" hidden>
   <a class="brand" href="#/">
     <span class="brand-mark">N1</span>
     <span class="brand-text">N1 Forex Academy</span>
   </a>
   <nav class="topnav">
     <a href="#/">Modules</a>
+    <a href="#/drills">Trading Floor</a>
     <a href="#/plan">Course Plan</a>
     <a href="#/toolkit">Toolkit</a>
     <a href="#/glossary">Glossary</a>
   </nav>
+  <div class="userchip" id="userchip"></div>
 </header>
 
-<main id="app"><div class="loading">Loading course…</div></main>
+<main id="app"><div class="loading">Loading academy…</div></main>
 
-<footer class="site-footer">
-  <p><strong>Risk warning.</strong> Trading foreign exchange and CFDs on margin carries a high level of risk and can result in the loss of all deposited funds. This material is educational only. It is not investment advice, not a recommendation to trade, and not a promise of results. Practise on a demo account and never risk money you cannot afford to lose.</p>
-  <p class="muted">N1 Forex Academy — teaching materials. Slides, labs and assessments for classroom or 1-to-1 delivery.</p>
+<footer class="site-footer" id="sitefooter" hidden>
+  <p><strong>Risk warning.</strong> Trading foreign exchange and CFDs on margin carries a high level of risk and can result in the loss of all deposited funds. This material is educational only. It is not investment advice, not a recommendation to trade, and not a promise of results. All trading in this academy is simulated — no real money and no real broker is involved at any point.</p>
+  <p class="muted">N1 Forex Academy — teaching materials. Slides, labs, assessed drills and simulator for classroom or 1-to-1 delivery. The simulator is a teaching replica and is not affiliated with, endorsed by, or connected to any commercial trading platform.</p>
 </footer>
 
+<script src="content/roster.js"></script>
 <script src="content/modules-1.js"></script>
 <script src="content/modules-2.js"></script>
 <script src="content/modules-3.js"></script>
+<script src="content/drills.js"></script>
+<script src="assets/auth.js"></script>
+<script src="assets/engine.js"></script>
+<script src="assets/terminal.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

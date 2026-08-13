@@ -56,6 +56,17 @@
           '<div class="stat"><b>~24h</b>contact time</div>' +
         '</div>' +
       '</section>' +
+      '<div class="section-head"><h2>Trading Floor</h2>' +
+        '<span class="muted">Theory is half of it. This is the other half.</span></div>' +
+      '<div class="panel">' +
+        '<p>Seven assessed drills on a simulated market with a full account model — spread, commission, swap, margin, ' +
+        'and a broker that will close you out exactly as a real one does. A <b>risk guard</b> sits between the student and ' +
+        'the order button: at first it blocks anything oversized and explains the arithmetic, then it drops to advisory, ' +
+        'then it disappears entirely for the final assessment.</p>' +
+        '<p class="muted">Students cannot progress by being lucky. Passing requires correct position sizing, respected ' +
+        'daily stops, and survivable drawdown — measured, not self-reported.</p>' +
+        '<p><a class="btn primary" href="#/drills" style="display:inline-block;text-decoration:none">Enter the Trading Floor →</a></p>' +
+      '</div>' +
       '<div class="section-head"><h2>Curriculum</h2>' +
         '<span class="muted">Teach in order — each module assumes the one before it.</span></div>' +
       '<div class="grid">' + cards + '</div>' +
@@ -220,6 +231,7 @@
     var m = MODULES.find(function (x) { return x.id === id; });
     if (!m) { app.innerHTML = '<div class="panel"><h2>Module not found</h2><p><a href="#/">Back to modules</a></p></div>'; return; }
     tab = tab || 'slides';
+    Auth.progress({ module: m.id, visited: true });
 
     var prev = MODULES.find(function (x) { return x.id === id - 1; });
     var next = MODULES.find(function (x) { return x.id === id + 1; });
@@ -420,6 +432,7 @@
         box.querySelector('.explain').hidden = false;
       });
       var pct = Math.round(right / qs.length * 100);
+      Auth.progress({ module: m.id, quiz: pct });
       document.getElementById('score').innerHTML =
         right + ' / ' + qs.length + ' correct (' + pct + '%) — ' +
         (pct >= 80 ? '<span style="color:var(--bull)">ready for the next module.</span>'
@@ -444,20 +457,135 @@
       '</div>';
   }
 
+  /* ---------- trading floor ---------- */
+  var activeTerminal = null;
+
+  function killTerminal() {
+    if (activeTerminal) { activeTerminal.destroy(); activeTerminal = null; }
+  }
+
+  function viewDrills() {
+    var drills = window.DRILLS || [];
+    var prog = Auth.progress() || { drills: {} };
+    var done = Object.keys(prog.drills || {}).filter(function (k) { return prog.drills[k].passed; }).length;
+
+    var cards = drills.map(function (d) {
+      var passed = prog.drills && prog.drills[d.id] && prog.drills[d.id].passed;
+      return '<a class="card drill-card' + (passed ? ' done' : '') + '" href="#/drill/' + d.id + '">' +
+        '<span class="num">Drill ' + (passed ? '· <span class="tick">passed ✓</span>' : '· Module ' + d.module) + '</span>' +
+        '<h3>' + esc(d.title) + '</h3>' +
+        '<p>' + esc(d.brief) + '</p>' +
+        '<div class="chips">' +
+          '<span class="chip">' + esc(FX.INSTRUMENTS[d.instrument].name) + '</span>' +
+          '<span class="chip">Risk guard: ' +
+            (d.policy.mode === 'guard' ? 'enforced' : d.policy.mode === 'advise' ? 'advisory' : 'off') +
+          '</span>' +
+        '</div></a>';
+    }).join('');
+
+    app.innerHTML =
+      '<div class="crumb"><a href="#/">Modules</a> / Trading Floor</div>' +
+      '<div class="module-head"><h1>Trading Floor</h1>' +
+      '<p class="lede">Seven assessed drills on a simulated market. The risk guard sits between you and the order button — ' +
+      'early on it blocks anything oversized and explains why, then it steps back as you progress, until the final drill ' +
+      'has no rails at all.</p>' +
+      '<div class="chips"><span class="chip">' + done + ' of ' + drills.length + ' passed</span></div></div>' +
+
+      '<div class="callout warn"><p><b>Everything here is simulated.</b> The price feed is generated, not live, and no broker ' +
+      'or real money is involved at any point. The market is deterministic from a seed, so a drill replays identically for ' +
+      'you and your instructor — which is what makes it teachable.</p></div>' +
+
+      '<div class="grid">' + cards + '</div>' +
+
+      '<div class="section-head"><h2>Free practice</h2></div>' +
+      '<div class="panel"><p>No objective, no assessment, all four instruments and the risk guard set to 1% enforced. ' +
+      'Use it to explore before a drill or to demonstrate something mid-lesson.</p>' +
+      '<p><a class="btn primary" href="#/drill/free" style="display:inline-block;text-decoration:none">Open free practice →</a></p></div>';
+  }
+
+  function viewDrill(id) {
+    var drills = window.DRILLS || [];
+    var d = drills.filter(function (x) { return x.id === id; })[0] || null;
+
+    if (id === 'free') {
+      d = {
+        id: 'free', module: 0, title: 'Free practice', brief: 'Unassessed practice.',
+        instrument: 'EURUSD', allowInstruments: ['EURUSD', 'GBPUSD', 'USDJPY', 'XAUUSD'],
+        account: { balance: 5000, leverage: 100 },
+        policy: { mode: 'guard', requireStop: true, maxRiskPct: 1, maxOpenRiskPct: 3, dailyStopPct: 3 },
+        objectives: [], hint: '', test: null
+      };
+    }
+    if (!d) { app.innerHTML = '<div class="panel"><h2>Drill not found</h2><p><a href="#/drills">Back to the trading floor</a></p></div>'; return; }
+
+    var mod = MODULES.find(function (m) { return m.id === d.module; });
+
+    app.innerHTML =
+      '<div class="crumb"><a href="#/drills">Trading Floor</a> / ' + esc(d.title) + '</div>' +
+      '<div class="module-head"><h1>' + esc(d.title) + '</h1>' +
+      '<p class="lede">' + esc(d.brief) + '</p>' +
+      (mod ? '<div class="chips"><span class="chip">Pairs with Module ' + mod.id + ' — ' + esc(mod.title) + '</span></div>' : '') +
+      '</div>' +
+      (d.objectives && d.objectives.length
+        ? '<div class="panel" style="margin-bottom:1rem"><h3 style="margin-top:0">Objective</h3><ul class="tight">' +
+          d.objectives.map(function (o) { return '<li>' + md(o) + '</li>'; }).join('') + '</ul>' +
+          (d.hint ? '<div class="callout"><p><b>Hint.</b> ' + esc(d.hint) + '</p></div>' : '') + '</div>'
+        : '') +
+      '<div id="termHost"></div>' +
+      (mod ? '<div class="pager"><a href="#/m/' + mod.id + '">← Revise Module ' + mod.id + '</a>' +
+             '<a href="#/drills">All drills →</a></div>' : '');
+
+    killTerminal();
+    activeTerminal = new FXTerminal(document.getElementById('termHost'), {
+      drill: d.test ? d : Object.assign({}, d, { test: null }),
+      onProgress: function (p) { if (p.drill && p.drill !== 'free') Auth.progress({ drill: p.drill, passed: p.passed }); }
+    });
+  }
+
+  /* ---------- chrome ---------- */
+  function renderChrome() {
+    var s = Auth.session();
+    if (!s) return;
+    document.getElementById('topbar').hidden = false;
+    document.getElementById('sitefooter').hidden = false;
+    var chip = document.getElementById('userchip');
+    chip.innerHTML =
+      '<span class="role' + (s.role === 'instructor' ? ' instructor' : '') + '">' + esc(s.role) + '</span>' +
+      '<b>' + esc(s.name) + '</b>' +
+      (s.role === 'instructor' ? '<a href="#/instructor">Instructor</a>' : '') +
+      '<button id="signout">Sign out</button>';
+    chip.querySelector('#signout').onclick = function () { Auth.signOut(); };
+  }
+
   /* ---------- router ---------- */
   function route() {
     document.onkeydown = null;
     document.body.classList.remove('presenting');
     var h = (location.hash || '#/').replace(/^#\/?/, '');
     var parts = h.split('/').filter(Boolean);
+
+    if (parts[0] !== 'drill') killTerminal();
+
     if (parts[0] === 'm' && parts[1]) viewModule(+parts[1], parts[2]);
+    else if (parts[0] === 'drills') viewDrills();
+    else if (parts[0] === 'drill' && parts[1]) viewDrill(parts[1]);
     else if (parts[0] === 'plan') viewPlan();
     else if (parts[0] === 'toolkit') viewToolkit();
     else if (parts[0] === 'glossary') viewGlossary();
+    else if (parts[0] === 'instructor') {
+      if (Auth.isInstructor()) Auth.renderInstructor(app);
+      else app.innerHTML = '<div class="panel"><h2>Instructor only</h2>' +
+        '<p>Sign out and sign back in with the instructor code to reach this page.</p></div>';
+    }
     else viewHome();
+
     if (!parts.length || parts[0] !== 'm') window.scrollTo(0, 0);
   }
 
-  window.addEventListener('hashchange', route);
-  route();
+  /* ---------- boot ---------- */
+  Auth.gate(app, function () {
+    renderChrome();
+    window.addEventListener('hashchange', route);
+    route();
+  });
 })();

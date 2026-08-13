@@ -1,139 +1,154 @@
-# N1 Forex Academy — Teaching Materials
+# N1 Forex Academy
 
-A complete 12-module forex curriculum built for **slides + practical lesson** delivery.
-Static site, no build step, no dependencies. Deploys to GitHub Pages or Cloudflare Pages as-is.
+A forex trading academy that teaches risk management by **enforcing it**, not just describing it.
+
+**Live:** https://n1forexacademy.github.io
+
+Static site — no build step, no dependencies. Deploys to GitHub Pages or Cloudflare Pages as-is.
+
+> **Maintaining or upgrading this?** Read [ARCHITECTURE.md](ARCHITECTURE.md) first. It covers the
+> simulation engine, how to add content, what the access gate really is, and how to move to real
+> authentication.
 
 ---
 
 ## What's in it
 
+### Course — 12 modules
+
 | | |
 |---|---|
-| **12 modules** | Foundation → chart reading → risk → systemising |
-| **~125 slides** | Each with an instructor note you can toggle off |
-| **12 practical labs** | Hands-on, supervised, each ending in a markable deliverable |
-| **12 quizzes** | Auto-marked, with an explanation on every option |
-| **~130 glossary terms** | Searchable, linked to the module that teaches each one |
-| **Instructor toolkit** | Pip value tables, risk-of-ruin table, R:R table, session clock |
+| **118 slides** | Presenter mode, instructor notes toggled with **N**, printable handouts |
+| **12 practical labs** | 96 numbered steps, each ending in a markable deliverable + rubric |
+| **72 quiz questions** | Auto-marked, with an explanation on every option |
+| **131 glossary terms** | Searchable, linked to the module that teaches each |
 
-Roughly **24 hours of contact time** — twelve ~2-hour sessions.
-
-### Curriculum
-
-**Foundation (M1–4)** — what the market is · pips & lots · orders, leverage & margin · brokers & platform setup
-**Reading the chart (M5–8)** — sessions & timing · candlesticks & structure · levels & liquidity · indicators
+**Foundation (M1–4)** — market structure · pips & lots · orders, leverage & margin · brokers & setup
+**Chart reading (M5–8)** — sessions & timing · candlesticks & structure · levels & liquidity · indicators
 **Risk & context (M9–10)** — fundamentals & news · **risk management and position sizing**
-**Systemising (M11–12)** — strategy & trading plan · backtesting, journaling, psychology & automation
+**Systemising (M11–12)** — strategy & trading plan · backtesting, journaling, psychology, automation
+
+### Trading Floor — 7 assessed drills
+
+A simulated market with a full account model: spread, commission, swap, margin, margin call, and a
+broker that force-closes you at 50% margin level exactly as a real one does.
+
+A **risk guard** sits between the student and the order button:
+
+| Stage | Mode | Behaviour |
+|---|---|---|
+| Modules 2–10 | `guard` | Blocks oversized orders and explains the arithmetic |
+| Module 11 | `advise` | Warns, allows, records that you overrode it |
+| Module 12 | `off` | Exam conditions — no rails |
+
+Drills assess **process, not profit**: correct position sizing, respected daily stops, survivable
+drawdown, compliance rate. They cannot be passed by getting lucky.
+
+Two interface skins over one engine — **Classic Terminal** (Market Watch + order ticket + terminal
+panel) and **Pro Charts** (single large chart). Both are teaching replicas, unaffiliated with any
+commercial platform.
+
+The market is **deterministic from a seed**, so a drill replays identically for instructor and
+student. That is what makes it teachable.
 
 ---
 
 ## Running a session
 
-1. Open the module, hit **Present**
-2. Arrow keys / Space to move, **N** toggles instructor notes, **Esc** exits present mode
-3. **Print handout** generates a student handout with note-taking space
-4. Teach slides (~40 min) → Practical Lab (~60 min) → Quiz (~10 min) → set homework
+1. Student signs in with their access code (see below)
+2. Open the module → **Present** → arrow keys or Space; **N** toggles instructor notes; **Esc** exits
+3. Teach slides (~40 min) → Practical Lab (~60 min) → Quiz (~10 min)
+4. Send them to the matching drill on the Trading Floor
+5. Set the homework
 
-Every lab lists what the student needs open, numbered steps, the deliverable, a marking rubric, and a "where students go wrong" section.
+Roughly **24 hours of contact time** — twelve ~2-hour sessions.
+
+---
+
+## Access codes
+
+Edit `content/roster.js`. Ships with:
+
+| Role | Code |
+|---|---|
+| Instructor | `n1-instructor` |
+| Demo student | `n1-demo` |
+| Seats 1–3 | `n1-seat-1`, `n1-seat-2`, `n1-seat-3` |
+
+**Change these before teaching.** Sign in as instructor → `#/instructor` for the roster view and a
+tool that converts a code to a SHA-256 hash, so plaintext isn't sitting in the page source.
+
+> ⚠️ **This gate is not security.** It runs in the browser and can be bypassed by anyone who opens
+> DevTools, and the repo is public so the content is readable regardless. It keeps student progress
+> separate and keeps the site tidy for a private cohort — nothing more. For real access control see
+> [ARCHITECTURE.md §7](ARCHITECTURE.md).
+
+Progress is stored **per browser**. A student on another device starts fresh, and the instructor
+roster only shows activity from the machine you're looking at.
 
 ---
 
 ## Local preview
 
-No server needed — just open `index.html`. Or:
+Needs a web server — opening `index.html` directly (`file://`) will not load the content scripts.
 
 ```bash
-python -m http.server 8000
+cd C:/Users/Jonathan/Forex_Teacher && python -m http.server 8777
 ```
+
+Then http://localhost:8777
 
 ---
 
-## Deploy to GitHub Pages
+## Deploying
 
-Account: **n1forexacademy** → the site lives at **https://n1forexacademy.github.io**
-
-First, on github.com: **New repository** → name it exactly `n1forexacademy.github.io` → **Public** → do *not* tick "Add a README" → Create.
-
-Then from this folder:
-
-```bash
-git init && git add -A && git commit -m "N1 Forex Academy teaching materials"
-```
-
-```bash
-git remote add origin https://github.com/n1forexacademy/n1forexacademy.github.io.git && git branch -M main && git push -u origin main
-```
-
-Because the repo is named `<username>.github.io`, Pages turns itself on — no Settings change needed. Live at **https://n1forexacademy.github.io** within a couple of minutes.
-
-To publish an update later:
+Push to `main`; Pages rebuilds in 30–60 seconds.
 
 ```bash
 git add -A && git commit -m "Update course" && git push
 ```
 
-The `.nojekyll` file is already included so GitHub serves the `assets/` and `content/` folders as-is.
+Because the repo is named `<username>.github.io`, Pages is on automatically — no Settings change.
+The `.nojekyll` file makes GitHub serve `assets/` and `content/` as-is; don't delete it.
 
----
+### Cloudflare Pages
 
-## Deploy to Cloudflare Pages
-
-**From the dashboard (no git needed):** Workers & Pages → Create → Pages → *Upload assets* → drag the whole folder in.
-
-**From a git repo:** Connect the repo, then set:
-
-| Setting | Value |
-|---|---|
-| Framework preset | None |
-| Build command | *(leave empty)* |
-| Build output directory | `/` |
-
-Or via CLI:
+Same repo, no build. Framework preset **None**, build command **empty**, output directory `/`.
 
 ```bash
 npx wrangler pages deploy . --project-name=n1forexacademy
 ```
 
+Worth it if you want **real authentication** — Cloudflare Access is free for up to 50 users and puts
+a genuine login in front of the site. See [ARCHITECTURE.md §7](ARCHITECTURE.md).
+
 ---
 
 ## Customising
 
-Content is plain JavaScript data — no templating language to learn.
+Content is plain JavaScript data — no templating language.
 
-- `content/modules-1.js` — Modules 1–4
-- `content/modules-2.js` — Modules 5–8
-- `content/modules-3.js` — Modules 9–12
+- `content/modules-1.js` / `-2.js` / `-3.js` — course modules
+- `content/drills.js` — trading drills
+- `content/roster.js` — students and access codes
+- `assets/style.css` — change `--accent` and the brand colour propagates everywhere
 
-Each module object:
-
-```js
-{
-  id, title, tagline, level, duration,
-  objectives: [],        // "by the end the student can…"
-  misconceptions: [],    // things to attack head-on
-  glossary: [{t, d}],    // feeds the site-wide glossary
-  slides: [{ kicker, title, bullets, visual, note }],
-  practical: { title, intro, setup, steps, deliverable, rubric, pitfalls },
-  homework: [],
-  quiz: [{ q, options, a, why }]   // a = index of correct option
-}
-```
-
-Inline markup in any string: `**bold**`, `*italic*`, `` `code` ``.
-`visual` takes raw inline SVG — use the `.fig` CSS classes (`.up`, `.dn`, `.acc`, `.dash`, `.lbl`) so diagrams follow the theme.
-
-Adding a module: append an object to any content file. The home page, glossary, course plan and navigation all pick it up automatically.
-
-**Colours** live as CSS custom properties at the top of `assets/style.css` — change `--accent` and the brand colour propagates everywhere. Light and dark themes are both defined.
+Adding a module is appending an object; the home page, glossary, course plan and navigation pick it
+up automatically. Full schemas in [ARCHITECTURE.md §5](ARCHITECTURE.md).
 
 ---
 
 ## Content note
 
-This material was written from scratch for teaching. It covers standard, factual forex concepts — market structure, pip arithmetic, margin mechanics, chart reading, risk formulas — expressed in original wording, so it's yours to publish, edit and rebrand.
+Written from scratch for teaching. It covers standard, factual forex concepts — market structure,
+pip arithmetic, margin mechanics, chart reading, risk formulas — in original wording, so it is yours
+to publish, edit and rebrand.
 
 ---
 
 ## Risk disclaimer
 
-Educational material only. Not investment advice. Trading FX and CFDs on margin carries a high risk of losing all deposited funds; the large majority of retail accounts lose money. The disclaimer in the site footer should stay on any published version.
+Educational material only. Not investment advice. Trading FX and CFDs on margin carries a high risk
+of losing all deposited funds, and the large majority of retail accounts lose money. **All trading in
+this academy is simulated** — no real money, no broker, no live prices at any point. The disclaimers
+in the site footer and on the Trading Floor should stay on any published version.
