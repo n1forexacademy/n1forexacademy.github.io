@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "120 min",
 
   objectives: [
-    "Choose between investing and trading timeframes and justify the choice",
-    "Build a repeatable screening process that narrows a market to a shortlist",
-    "Write entry, exit and review rules specific enough to be followed",
-    "Adapt the journal and review process to a longer holding period",
-    "Compare the two asset classes honestly and decide where your effort belongs"
+    "Decide how long you actually intend to hold, and say why",
+    "Build a repeatable way to narrow thousands of companies down to a shortlist",
+    "Write down why you hold something, and the specific thing that would prove you wrong",
+    "Keep a journal and review routine that works on a much slower clock",
+    "Compare currencies and shares honestly, and decide where your attention belongs now"
   ],
 
   misconceptions: [

@@ -10,11 +10,11 @@ window.COURSE = (window.COURSE || []).concat([
   duration: "120 min",
 
   objectives: [
-    "Size an equity position from a stop and a risk percentage, without leverage",
-    "Explain why stops behave differently in equities than in forex",
-    "Apply concentration limits per company and per sector",
-    "Quantify gap risk and size so that a bad open is survivable",
-    "Translate the forex risk policy into an equity risk policy"
+    "Work out how many shares to buy, from your stop and your risk percentage",
+    "Explain why a stop protects you less here than it did in forex",
+    "Set limits on how much you hold in any one company, and in any one industry",
+    "Size positions so that a bad overnight open is something you can survive",
+    "Extend your forex risk policy to cover shares, rather than starting again"
   ],
 
   misconceptions: [
