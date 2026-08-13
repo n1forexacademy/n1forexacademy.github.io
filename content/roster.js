@@ -19,6 +19,23 @@
    TO CHANGE THE INSTRUCTOR CODE
      Edit `instructor` below. Same plaintext/hash choice applies.
    --------------------------------------------------------------------------- */
+/* ---------------------------------------------------------------------------
+   SERVER MODE — set this to switch on real login and central progress.
+
+   Leave it empty and the academy runs in LOCAL mode using the `seats` below
+   (browser-only checks, progress saved per-device).
+
+   Set it to your deployed Worker URL and the academy switches to SERVER mode:
+   codes are verified server-side against hashed values, and progress is stored
+   centrally so it follows a student between devices and appears in your roster.
+
+     window.API_BASE = 'https://n1-academy-api.<your-subdomain>.workers.dev';
+
+   Setup steps are in ARCHITECTURE.md §7. The `seats` below are ignored in
+   server mode — students live in the database instead.
+   --------------------------------------------------------------------------- */
+window.API_BASE = '';
+
 window.ROSTER = {
   cohort: 'N1 Forex Academy — Cohort 1',
 

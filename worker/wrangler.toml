@@ -1,0 +1,24 @@
+# N1 Forex Academy — auth + progress API.
+# Deploy from this directory:  npx wrangler deploy
+#
+# ALLOWED_ORIGINS controls which sites may call this API from a browser.
+# Add http://localhost:8777 while testing locally; keep the github.io origin
+# for production. No trailing slashes.
+
+name = "n1-academy-api"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+ALLOWED_ORIGINS = "https://n1forexacademy.github.io,http://localhost:8777"
+
+# Created by:  npx wrangler d1 create n1-academy
+# Paste the database_id it prints into the line below.
+[[d1_databases]]
+binding = "DB"
+database_name = "n1-academy"
+database_id = "PASTE_DATABASE_ID_HERE"
+
+# ADMIN_KEY is a secret, not a var. Set it with:
+#   npx wrangler secret put ADMIN_KEY
+# It protects /api/enroll and /api/revoke. Never commit it.

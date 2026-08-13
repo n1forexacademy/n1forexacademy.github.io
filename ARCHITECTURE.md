@@ -31,12 +31,17 @@ assets/
   style.css             Base design system. CSS custom properties at the top drive all colour.
   academy.css           Gate, terminal, drill and instructor styles. Loaded second.
   app.js                Router, views, slide deck, quiz. The entry point.
-  auth.js               Cohort gate + per-student progress (localStorage).
+  auth.js               Sign-in + progress. Local mode OR server mode — see §7.
   engine.js             SIMULATION CORE. Market feed, account/margin model, risk guard. No DOM.
   terminal.js           Terminal UI. Canvas chart, order ticket, panels, guard modal.
 
+worker/                 OPTIONAL backend. Only needed for server mode (§7).
+  src/index.js          Auth + progress API (Cloudflare Worker).
+  schema.sql            D1 tables: students, sessions, progress.
+  wrangler.toml         Config. database_id and ALLOWED_ORIGINS go here.
+
 content/
-  roster.js             Cohort + access codes. EDIT THIS to add students.
+  roster.js             API_BASE switch + local-mode access codes. EDIT THIS.
   modules-1.js          Modules 1–4   (foundation)
   modules-2.js          Modules 5–8   (chart reading)
   modules-3.js          Modules 9–12  (risk, strategy, systemising)
@@ -242,7 +247,112 @@ To hash instead: sign in as instructor → `#/instructor` → Hash tool → repl
 
 ---
 
-## 7. Real authentication (answering "would Cloudflare make a difference?")
+## 7. Server mode — real login and central progress
+
+The academy runs in one of two modes, chosen by `window.API_BASE` in `content/roster.js`.
+
+| | LOCAL mode (`API_BASE = ''`) | SERVER mode (`API_BASE` set) |
+|---|---|---|
+| Code check | In the browser, against `roster.js` | On the server, against PBKDF2 hashes in D1 |
+| Bypassable in DevTools | Yes | No |
+| Progress stored | `localStorage`, per device | D1 database, per account |
+| Follows a student between devices | No | Yes |
+| Instructor sees work done at home | No | Yes |
+| Cost | Free | Free |
+
+**The frontend can stay on GitHub Pages either way.** The Worker is a separate service the browser
+calls; it does not need to host the site. That is why `n1forexacademy.github.io` can keep real login.
+
+### What server mode does and does not do
+
+- **Does:** make authentication real, make progress central and tamper-resistant, keep sessions
+  revocable.
+- **Does not:** hide the course content. The files still come from public GitHub Pages. Hiding the
+  material is a separate decision — see §7.4.
+
+### 7.1 One-time setup
+
+All of this is free tier. Run from the `worker/` directory.
+
+```bash
+cd C:/Users/Jonathan/Forex_Teacher/worker && npx wrangler login
+```
+
+```bash
+npx wrangler d1 create n1-academy
+```
+
+Copy the printed `database_id` into `worker/wrangler.toml`, then create the tables and set the
+admin key (pick a long random string — it protects enrolment, not student sign-in):
+
+```bash
+npx wrangler d1 execute n1-academy --remote --file=./schema.sql && npx wrangler secret put ADMIN_KEY
+```
+
+```bash
+npx wrangler deploy
+```
+
+Wrangler prints the Worker URL. Put it in `content/roster.js`:
+
+```js
+window.API_BASE = 'https://n1-academy-api.YOUR-SUBDOMAIN.workers.dev';
+```
+
+Commit and push. The site switches to server mode on the next Pages build.
+
+### 7.2 Enrolling people
+
+There is no signup form by design — you issue codes. Replace `$KEY` with your `ADMIN_KEY` and
+`$API` with the Worker URL.
+
+```bash
+curl -X POST "$API/api/enroll" -H "x-admin-key: $KEY" -H "Content-Type: application/json" -d '{"id":"instructor","name":"Instructor","code":"a-long-private-code","role":"instructor"}'
+```
+
+```bash
+curl -X POST "$API/api/enroll" -H "x-admin-key: $KEY" -H "Content-Type: application/json" -d '{"id":"student-1","name":"Sam","code":"another-long-code"}'
+```
+
+Codes must be at least 8 characters. Re-running `enroll` with an existing `id` **changes that
+person's code** — that is the password-reset path. `id` must never be reused for a different person,
+because progress is keyed on it.
+
+To remove someone (deactivates the account and kills their live sessions):
+
+```bash
+curl -X POST "$API/api/revoke" -H "x-admin-key: $KEY" -H "Content-Type: application/json" -d '{"id":"student-1"}'
+```
+
+### 7.3 Operational notes
+
+- **CORS** — `ALLOWED_ORIGINS` in `wrangler.toml` lists who may call the API. It must contain the
+  exact site origin, no trailing slash. Add `http://localhost:8777` for local work. Change the
+  site's domain and you must update this or every login fails.
+- **Sessions** last 30 days, stored hashed, and are deleted on sign-out or revoke.
+- **Offline tolerance** — if the API is unreachable mid-lesson, progress keeps accumulating in
+  memory and posts when it returns. A lesson never blocks on the network.
+- **Free tier headroom** — 100k Worker requests/day and a 5GB D1. A cohort of a few students uses a
+  rounding error of this.
+- **Never commit `ADMIN_KEY`.** It lives in `wrangler secret`, not in any file.
+
+### 7.4 If you also want the content private
+
+Only needed if the material itself must not be publicly readable. It costs you the `github.io`
+domain and adds a second login for students, so do not do it unless you actually need it.
+
+1. Make the GitHub repo **private** and turn **GitHub Pages off** — otherwise it remains an open
+   back door serving the same files.
+2. Host on **Cloudflare Pages** (`npx wrangler pages deploy . --project-name=n1forexacademy`).
+   It deploys from private repos fine.
+3. Put **Cloudflare Access** in front of it (Zero Trust → Access → self-hosted app). Free for up to
+   50 users. Unauthenticated requests never reach the site.
+
+Note the UX cost: students would sign in to Access *and* to the academy. If you go this route it is
+usually better to drop the academy's own login and read the identity from the Access JWT header
+instead — more work, one login.
+
+## 7.5 Background: why GitHub alone cannot do this
 
 **Yes — substantially.** GitHub Pages serves static files and nothing else, so real auth is
 impossible there. Cloudflare's free tier gives you server-side execution, which changes it
