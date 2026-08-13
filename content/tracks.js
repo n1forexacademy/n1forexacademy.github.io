@@ -120,8 +120,58 @@ window.TRACKS = [
       {
         id: 'bd-certificate',
         title: 'Certificate',
-        blurb: 'The final certificate. All three markets, one system.',
+        blurb: 'Certificate in Fixed Income. Three markets, one system.',
         steps: [{ id: 'cert-bonds', type: 'cert', title: 'Certificate in Fixed Income' }]
+      }
+    ]
+  },
+  {
+    id: 'futures',
+    title: 'Futures',
+    subtitle: 'Obligations with a date on them',
+    blurb: 'The exchange-traded, centrally-cleared version of the leverage you already met — plus expiry, daily cash settlement, and a market where most of the money is buying certainty rather than chasing profit.',
+    requires: 'bonds',
+    certificateTitle: 'Certificate in Futures Markets',
+    stages: [
+      {
+        id: 'ft-instrument',
+        title: 'The instrument',
+        blurb: 'What you have actually agreed to, and why the clearing house means you never ask who took the other side.',
+        steps: [
+          { id: 'm301', type: 'module', ref: 301, pass: 80 },
+          { id: 'd-ft-spec', type: 'drill', ref: 'ft-spec' },
+          { id: 'm302', type: 'module', ref: 302, pass: 85 }
+        ]
+      },
+      {
+        id: 'ft-structure',
+        title: 'Expiry and participants',
+        blurb: 'Every contract dies on a known date, and most of the open interest belongs to people who are not speculating.',
+        steps: [
+          { id: 'm303', type: 'module', ref: 303, pass: 80 },
+          { id: 'd-ft-roll', type: 'drill', ref: 'ft-roll' },
+          { id: 'm304', type: 'module', ref: 304, pass: 80 }
+        ]
+      },
+      {
+        id: 'ft-risk',
+        title: 'Risk and process',
+        blurb: 'Whole contracts, daily cash settlement, and an honest answer about whether this market suits your account.',
+        steps: [
+          { id: 'm305', type: 'module', ref: 305, pass: 85 },
+          { id: 'd-ft-margin', type: 'drill', ref: 'ft-margin' },
+          { id: 'g-futures-plan', type: 'gate', title: 'Submit your futures plan',
+            detail: 'The addendum from Lab 305. Your instructor checks that the product list follows from the sizing ' +
+                    'arithmetic rather than from interest, that a specific cash reserve and margin-to-equity ceiling are ' +
+                    'stated, that the roll rule is precise enough for someone else to apply, and that the three-day ' +
+                    'stress test uses real tick values. Concluding that no contract suits the account is a pass.' }
+        ]
+      },
+      {
+        id: 'ft-certificate',
+        title: 'Certificate',
+        blurb: 'Recognition that you completed the futures programme.',
+        steps: [{ id: 'cert-futures', type: 'cert', title: 'Certificate in Futures Markets' }]
       }
     ]
   }

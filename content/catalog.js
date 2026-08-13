@@ -83,5 +83,20 @@ window.CATALOG = [
     level: "Advanced", duration: "90 min", slides: 6, quiz: 5 },
   { id: 206, track: "bonds", title: "Bonds, Rates and Currencies — Closing the Loop",
     tagline: "The three markets you have studied are one system. This module shows you the wiring.",
-    level: "Advanced", duration: "120 min", slides: 7, quiz: 5 }
+    level: "Advanced", duration: "120 min", slides: 7, quiz: 5 },
+  { id: 301, track: "futures", title: "What a Futures Contract Actually Is",
+    tagline: "An obligation with a date on it — standardised, exchange-traded, and guaranteed by someone who has never met you.",
+    level: "Derivatives", duration: "75 min", slides: 7, quiz: 5 },
+  { id: 302, track: "futures", title: "Margin, Daily Settlement and Real Cash",
+    tagline: "Your profit and loss stops being a number on a screen and starts being money moving in and out of your account every single evening.",
+    level: "Derivatives", duration: "90 min", slides: 6, quiz: 5 },
+  { id: 303, track: "futures", title: "Expiry, Rollover and the Shape of the Curve",
+    tagline: "Every contract dies on a known date. What that costs you depends on the shape of a curve nobody shows you on the chart.",
+    level: "Derivatives", duration: "90 min", slides: 6, quiz: 5 },
+  { id: 304, track: "futures", title: "Who Is Actually On The Other Side",
+    tagline: "Most of the money in this market is not trying to make money. Understanding why changes how you read it.",
+    level: "Derivatives", duration: "75 min", slides: 6, quiz: 5 },
+  { id: 305, track: "futures", title: "Risk and Building a Futures Approach",
+    tagline: "The same risk policy you already signed, extended for whole contracts, cash settlement and a market that trades while you sleep.",
+    level: "Derivatives", duration: "90 min", slides: 6, quiz: 5 }
 ];
