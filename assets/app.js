@@ -227,9 +227,32 @@
   }
 
   /* ---------- module ---------- */
+  /* Shown when someone reaches a locked step by typing the URL. */
+  function lockedNotice(kindLabel, title) {
+    var st = Path.state(Auth.progress());
+    var cur = st.current ? Journey.stepMeta(st.current.step) : null;
+    app.innerHTML =
+      '<div class="crumb"><a href="#/">Your path</a> / Locked</div>' +
+      '<div class="panel locked-panel">' +
+        '<div class="lock-big">🔒</div>' +
+        '<h2>' + esc(title) + ' is not open yet</h2>' +
+        '<p>' + esc(kindLabel) + ' unlock in order. The sequence is deliberate — each one assumes the work before it, ' +
+        'and skipping ahead is how people end up sizing positions they do not understand.</p>' +
+        (cur ? '<div class="callout"><p><b>Your next step is:</b> ' + esc(cur.title) + '<br>' +
+               esc(st.current.requirement) + '</p></div>' +
+               (cur.href ? '<p><a class="btn primary" href="' + cur.href + '" style="display:inline-block;text-decoration:none">Go there →</a></p>' : '')
+             : '') +
+        '<p class="muted">Genuinely stuck on the step before this? Ask your instructor — they can work through it ' +
+        'with you and unlock it manually if that is the right call.</p>' +
+      '</div>';
+  }
+
   function viewModule(id, tab) {
     var m = MODULES.find(function (x) { return x.id === id; });
-    if (!m) { app.innerHTML = '<div class="panel"><h2>Module not found</h2><p><a href="#/">Back to modules</a></p></div>'; return; }
+    if (!m) { app.innerHTML = '<div class="panel"><h2>Module not found</h2><p><a href="#/">Back to your path</a></p></div>'; return; }
+    if (!Auth.isInstructor() && !Path.moduleUnlocked(id, Auth.progress())) {
+      return lockedNotice('Modules', 'Module ' + id + ' — ' + m.title);
+    }
     tab = tab || 'slides';
     Auth.progress({ module: m.id, visited: true });
 
@@ -517,6 +540,9 @@
       };
     }
     if (!d) { app.innerHTML = '<div class="panel"><h2>Drill not found</h2><p><a href="#/drills">Back to the trading floor</a></p></div>'; return; }
+    if (id !== 'free' && !Auth.isInstructor() && !Path.drillUnlocked(id, Auth.progress())) {
+      return lockedNotice('Drills', d.title);
+    }
 
     var mod = MODULES.find(function (m) { return m.id === d.module; });
 
@@ -569,6 +595,9 @@
     if (parts[0] === 'm' && parts[1]) viewModule(+parts[1], parts[2]);
     else if (parts[0] === 'drills') viewDrills();
     else if (parts[0] === 'drill' && parts[1]) viewDrill(parts[1]);
+    else if (parts[0] === 'certificate') Journey.certificate(app, Auth.progress());
+    else if (parts[0] === 'demo') Journey.demo(app, Auth.progress());
+    else if (parts[0] === 'library') viewHome();
     else if (parts[0] === 'plan') viewPlan();
     else if (parts[0] === 'toolkit') viewToolkit();
     else if (parts[0] === 'glossary') viewGlossary();
@@ -577,7 +606,8 @@
       else app.innerHTML = '<div class="panel"><h2>Instructor only</h2>' +
         '<p>Sign out and sign back in with the instructor code to reach this page.</p></div>';
     }
-    else viewHome();
+    else if (Auth.isInstructor()) viewHome();
+    else Journey.render(app, Auth.progress());
 
     if (!parts.length || parts[0] !== 'm') window.scrollTo(0, 0);
   }

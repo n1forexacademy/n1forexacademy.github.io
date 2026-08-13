@@ -137,21 +137,66 @@ function slugify(name) {
   return String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 24) || 'student';
 }
 
-function mergeProgress(current, patch) {
+/* Merges a progress patch. Students may write their own learning progress and
+   demo log; only an instructor may set `overrides`, `gates`, `demoSignoff` and
+   `liveApproved` — those are gated by `allowInstructorFields`. */
+function mergeProgress(current, patch, allowInstructorFields) {
   const p = current && typeof current === 'object' ? current : {};
   p.modules = p.modules || {};
   p.drills = p.drills || {};
-  if (patch && patch.module) {
+  p.demoLog = Array.isArray(p.demoLog) ? p.demoLog : [];
+  if (!patch) return p;
+
+  if (patch.module) {
     const key = String(patch.module);
     const m = p.modules[key] || {};
     if (patch.visited) m.visited = true;
     if (typeof patch.quiz === 'number') m.quiz = Math.max(m.quiz || 0, patch.quiz);
     p.modules[key] = m;
   }
-  if (patch && patch.drill) {
+  if (patch.drill) {
     const prev = p.drills[patch.drill] || {};
     p.drills[patch.drill] = { passed: !!(patch.passed || prev.passed), at: Date.now() };
   }
+
+  // Certificate is write-once: the issue date and reference never change.
+  if (patch.certificate && !p.certificate) {
+    p.certificate = {
+      issuedAt: Number(patch.certificate.issuedAt) || Date.now(),
+      id: String(patch.certificate.id || '').slice(0, 40),
+      name: String(patch.certificate.name || '').slice(0, 80)
+    };
+  }
+
+  // One row per week; re-submitting a week replaces it rather than duplicating.
+  if (patch.demoWeek && patch.demoWeek.week) {
+    const w = {
+      week: Math.max(1, Math.min(520, parseInt(patch.demoWeek.week, 10) || 1)),
+      trades: Math.max(0, parseInt(patch.demoWeek.trades, 10) || 0),
+      followed: Math.max(0, parseInt(patch.demoWeek.followed, 10) || 0),
+      r: Number(patch.demoWeek.r) || 0,
+      note: String(patch.demoWeek.note || '').slice(0, 300),
+      at: Date.now()
+    };
+    if (w.followed > w.trades) w.followed = w.trades;
+    p.demoLog = p.demoLog.filter((x) => x.week !== w.week).concat([w]).slice(-200);
+  }
+  if (typeof patch.demoMaxDrawdown === 'number' && patch.demoMaxDrawdown >= 0) {
+    p.demoMaxDrawdown = Math.min(100, patch.demoMaxDrawdown);
+  }
+
+  if (allowInstructorFields) {
+    if (patch.overrides && typeof patch.overrides === 'object') {
+      p.overrides = Object.assign({}, p.overrides || {}, patch.overrides);
+    }
+    if (patch.gates && typeof patch.gates === 'object') {
+      p.gates = Object.assign({}, p.gates || {}, patch.gates);
+    }
+    if (typeof patch.demoSignoff === 'boolean') p.demoSignoff = patch.demoSignoff;
+    if (typeof patch.liveApproved === 'boolean') p.liveApproved = patch.liveApproved;
+    if (typeof patch.instructorNote === 'string') p.instructorNote = patch.instructorNote.slice(0, 600);
+  }
+
   p.updatedAt = Date.now();
   return p;
 }
@@ -165,6 +210,20 @@ async function upsertStudent(env, { id, name, role, code, username }) {
        code_hash=excluded.code_hash, code_salt=excluded.code_salt, active=1,
        username=excluded.username`
   ).bind(id, name, role || 'student', hash, salt, Date.now(), String(username).toLowerCase()).run();
+}
+
+async function writeProgress(env, studentId, displayName, patch, allowInstructorFields) {
+  const row = await env.DB.prepare('SELECT data FROM progress WHERE student_id = ?').bind(studentId).first();
+  let current = {};
+  try { current = row ? JSON.parse(row.data) : {}; } catch (e) {}
+  const next = mergeProgress(current, patch, allowInstructorFields);
+  next.student = studentId;
+  if (displayName) next.name = displayName;
+  await env.DB.prepare(
+    `INSERT INTO progress (student_id, data, updated_at) VALUES (?,?,?)
+     ON CONFLICT(student_id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at`
+  ).bind(studentId, JSON.stringify(next), Date.now()).run();
+  return next;
 }
 
 async function usernameTaken(env, username) {
@@ -430,15 +489,8 @@ export default {
       }
       if (path === '/api/progress' && request.method === 'POST') {
         const patch = await request.json().catch(() => ({}));
-        const row = await env.DB.prepare('SELECT data FROM progress WHERE student_id = ?').bind(user.id).first();
-        let current = {};
-        try { current = row ? JSON.parse(row.data) : {}; } catch (e) {}
-        const next = mergeProgress(current, patch);
-        next.student = user.id; next.name = user.name;
-        await env.DB.prepare(
-          `INSERT INTO progress (student_id, data, updated_at) VALUES (?,?,?)
-           ON CONFLICT(student_id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at`
-        ).bind(user.id, JSON.stringify(next), Date.now()).run();
+        // A student writing their own progress can never set instructor fields.
+        const next = await writeProgress(env, user.id, user.name, patch, false);
         return json({ progress: next }, 200, env, request);
       }
 
@@ -450,6 +502,17 @@ export default {
 
       if (path === '/api/roster' || (path === '/api/admin/students' && request.method === 'GET')) {
         return listStudents(env, request);
+      }
+      if (path === '/api/admin/progress' && request.method === 'POST') {
+        // Instructor helping a specific student: unlock a step, sign off the
+        // demo period, approve live, or leave a note. Recorded, never silent.
+        const b = await request.json().catch(() => ({}));
+        const target = String(b.studentId || '').trim();
+        if (!target) return json({ error: 'studentId required.' }, 400, env, request);
+        const exists = await env.DB.prepare('SELECT name FROM students WHERE id = ?').bind(target).first();
+        if (!exists) return json({ error: 'No such student.' }, 404, env, request);
+        const next = await writeProgress(env, target, exists.name, b.patch || {}, true);
+        return json({ ok: true, progress: next }, 200, env, request);
       }
       if (path === '/api/admin/students' && request.method === 'POST') return createStudent(user, request, env);
       if (path === '/api/admin/revoke' && request.method === 'POST') return revokeStudent(user, request, env);

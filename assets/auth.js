@@ -127,9 +127,11 @@
       }
 
       if (patch) {
-        // Apply locally first so the UI is instant and works offline.
+        // Apply locally first so the UI is instant and works offline. This must
+        // mirror mergeProgress() in the Worker, or the two drift apart.
         cache.modules = cache.modules || {};
         cache.drills = cache.drills || {};
+        cache.demoLog = Array.isArray(cache.demoLog) ? cache.demoLog : [];
         if (patch.module) {
           var m = cache.modules[patch.module] || {};
           if (patch.visited) m.visited = true;
@@ -137,6 +139,13 @@
           cache.modules[patch.module] = m;
         }
         if (patch.drill) cache.drills[patch.drill] = { passed: !!patch.passed, at: Date.now() };
+        if (patch.certificate && !cache.certificate) cache.certificate = patch.certificate;
+        if (patch.demoWeek && patch.demoWeek.week) {
+          var w = patch.demoWeek;
+          if (+w.followed > +w.trades) w.followed = w.trades;
+          cache.demoLog = cache.demoLog.filter(function (x) { return x.week !== w.week; }).concat([w]);
+        }
+        if (typeof patch.demoMaxDrawdown === 'number') cache.demoMaxDrawdown = patch.demoMaxDrawdown;
         cache.updatedAt = Date.now();
 
         if (serverMode) { pendingPatches.push(patch); scheduleFlush(); }
@@ -375,7 +384,8 @@
             '<td>' + (avg === null ? '—' : avg + '%') + '</td>' +
             '<td>' + passed + ' / ' + totalDrills + '</td>' +
             '<td>' + (s.updatedAt ? new Date(s.updatedAt).toLocaleDateString() : '—') + '</td>' +
-            '<td><button class="btn-x" data-reset="' + esc(s.id) + '">Reset code</button> ' +
+            '<td><button class="btn-x" data-help="' + esc(s.id) + '">Help</button> ' +
+              '<button class="btn-x" data-reset="' + esc(s.id) + '">Reset code</button> ' +
               (s.active && s.role !== 'instructor'
                 ? '<button class="btn-x" data-revoke="' + esc(s.id) + '">Revoke</button>' : '') +
             '</td></tr>';
@@ -400,6 +410,12 @@
             '</div><p class="admin-msg" id="nsMsg"></p>' +
           '</div>';
 
+        pane.querySelectorAll('[data-help]').forEach(function (b) {
+          b.onclick = function () {
+            var s = (data.students || []).filter(function (x) { return x.id === b.dataset.help; })[0];
+            if (s) helpStudent(s);
+          };
+        });
         pane.querySelectorAll('[data-revoke]').forEach(function (b) {
           b.onclick = async function () {
             if (!confirm('Revoke ' + b.dataset.revoke + '? They will be signed out and unable to sign back in. Their progress is kept.')) return;
@@ -429,6 +445,69 @@
             students();
           } catch (e) { msg.textContent = e.message; msg.className = 'admin-msg bad'; }
         };
+      }
+
+      /* Per-student help sheet: see exactly where they are stuck, unlock a
+         single step, sign off the demo period, or approve live trading. */
+      function helpStudent(s) {
+        var st = window.Path ? Path.state(s) : null;
+        var steps = st ? st.steps : [];
+        var demo = st ? st.demo : null;
+
+        var rows = steps.map(function (d) {
+          var meta = window.Journey ? Journey.stepMeta(d.step) : { title: d.step.id, kind: d.step.type };
+          return '<tr class="hs-' + d.status + '"><td>' + esc(meta.kind) + '</td>' +
+            '<td><b>' + esc(meta.title) + '</b>' + (d.overridden ? ' <span class="chip">unlocked by you</span>' : '') + '</td>' +
+            '<td>' + (d.status === 'done' ? '✓ done' : d.status === 'current' ? '▶ here now' : 'locked') + '</td>' +
+            '<td>' + (d.done ? '' : '<button class="btn-x" data-unlock="' + esc(d.step.id) + '">Unlock</button>') + '</td></tr>';
+        }).join('');
+
+        var demoRows = demo ? demo.checks.map(function (c) {
+          return '<div class="chk ' + (c.ok ? 'ok' : '') + '"><span class="chk-i">' + (c.ok ? '✓' : '○') +
+            '</span><span class="chk-l">' + esc(c.label) + '</span><span class="chk-v">' +
+            esc(c.fmt(c.have)) + '</span></div>';
+        }).join('') : '';
+
+        var modal = document.createElement('div');
+        modal.className = 'g-back';
+        modal.innerHTML =
+          '<div class="g-modal help-modal">' +
+            '<div class="g-head">' + esc(s.name) + ' — where they are</div>' +
+            '<div class="help-body">' +
+              (st ? '<p class="muted">' + st.done + ' of ' + st.total + ' steps complete (' + st.percent + '%).</p>' : '') +
+              '<div class="table-wrap"><table class="tt"><tbody>' + rows + '</tbody></table></div>' +
+              (demo ? '<h4>Demo period</h4><div class="chks">' + demoRows + '</div>' : '') +
+              '<div class="help-acts">' +
+                '<button class="btn" id="hsSign">' + (s.demoSignoff ? 'Withdraw demo sign-off' : 'Sign off demo period') + '</button>' +
+                '<button class="btn" id="hsLive">' + (s.liveApproved ? 'Withdraw live approval' : 'Approve for live review') + '</button>' +
+              '</div>' +
+              '<p class="muted" style="font-size:.78rem">Unlocking a step records it against the student and shows on ' +
+              'their path. Use it to help someone who is genuinely stuck — not to move people past the risk stages.</p>' +
+            '</div>' +
+            '<div class="g-actions"><button class="btn" id="hsClose">Close</button></div>' +
+          '</div>';
+        document.body.appendChild(modal);
+
+        var close = function () { modal.remove(); };
+        modal.querySelector('#hsClose').onclick = close;
+        modal.onclick = function (e) { if (e.target === modal) close(); };
+
+        async function push(patch) {
+          try {
+            await api('/api/admin/progress', { method: 'POST', body: { studentId: s.id, patch: patch } });
+            close(); students();
+          } catch (e) { alert(e.message); }
+        }
+        modal.querySelectorAll('[data-unlock]').forEach(function (b) {
+          b.onclick = function () {
+            var o = {}; o[b.dataset.unlock] = true;
+            if (confirm('Unlock "' + b.dataset.unlock + '" for ' + s.name + '? This is recorded on their path.')) {
+              push({ overrides: o });
+            }
+          };
+        });
+        modal.querySelector('#hsSign').onclick = function () { push({ demoSignoff: !s.demoSignoff }); };
+        modal.querySelector('#hsLive').onclick = function () { push({ liveApproved: !s.liveApproved }); };
       }
 
       async function invites() {
