@@ -173,8 +173,11 @@
             '<h1>Sign in</h1>' +
             '<p class="gate-sub">' + roster.cohort + '</p>' +
             '<form id="gForm">' +
-              '<label>Your name<input id="gName" autocomplete="name" placeholder="e.g. Sam Okoye" required></label>' +
-              '<label>Access code<input id="gCode" type="password" autocomplete="off" placeholder="Issued by your instructor" required></label>' +
+              (serverMode
+                ? '<label>Username<input id="gUser" autocomplete="username" placeholder="the username you chose" required></label>'
+                : '<label>Your name<input id="gName" autocomplete="name" placeholder="e.g. Sam Okoye" required></label>') +
+              '<label>Password<input id="gCode" type="password" autocomplete="current-password" placeholder="' +
+                (serverMode ? 'your password' : 'issued by your instructor') + '" required></label>' +
               '<button class="btn primary wide" type="submit" id="gGo">Enter the academy</button>' +
               '<p class="gate-err" id="gErr" hidden></p>' +
             '</form>' +
@@ -196,14 +199,17 @@
 
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
-        var name = mount.querySelector('#gName').value.trim();
+        var userEl = mount.querySelector('#gUser');
+        var nameEl = mount.querySelector('#gName');
+        var name = nameEl ? nameEl.value.trim() : '';
+        var username = userEl ? userEl.value.trim().toLowerCase() : '';
         var code = mount.querySelector('#gCode').value;
         errEl.hidden = true;
 
         if (serverMode) {
           goBtn.disabled = true; goBtn.textContent = 'Checking…';
           try {
-            var r = await api('/api/login', { method: 'POST', body: { name: name, code: code } });
+            var r = await api('/api/login', { method: 'POST', body: { username: username, code: code } });
             store(TOKEN_KEY, r.token);
             store(SESSION_KEY, r.user);
             location.reload();
@@ -211,8 +217,8 @@
           } catch (err) {
             goBtn.disabled = false; goBtn.textContent = 'Enter the academy';
             errEl.textContent = err.status === 401
-              ? 'That code was not recognised. Check it with your instructor — codes are case sensitive.'
-              : 'Could not reach the academy server. Check your connection and try again.';
+              ? 'Username or password not recognised. Passwords are case sensitive.'
+              : (err.message || 'Could not reach the academy server. Check your connection and try again.');
             errEl.hidden = false;
             return;
           }
@@ -276,6 +282,9 @@
           '<p class="gate-sub">' + esc(info.label) + '</p>' +
           '<form id="jForm">' +
             '<label>Your full name<input id="jName" autocomplete="name" placeholder="e.g. Sam Okoye" required></label>' +
+            '<label>Choose a username<input id="jUser" autocomplete="username" placeholder="e.g. sam.okoye" required>' +
+              '<small class="field-hint">3–32 characters: lowercase letters, numbers, dot, dash or underscore. ' +
+              'This is what you type to sign in.</small></label>' +
             '<label>Choose a password<input id="jCode" type="password" autocomplete="new-password" placeholder="At least 8 characters" required></label>' +
             '<label>Confirm password<input id="jCode2" type="password" autocomplete="new-password" required></label>' +
             '<button class="btn primary wide" type="submit" id="jGo">Create account</button>' +
@@ -293,13 +302,19 @@
         e.preventDefault();
         err.hidden = true;
         var name = mount.querySelector('#jName').value.trim();
+        var username = mount.querySelector('#jUser').value.trim().toLowerCase();
         var c1 = mount.querySelector('#jCode').value, c2 = mount.querySelector('#jCode2').value;
+        if (!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(username)) {
+          err.textContent = 'Username must be 3–32 characters: lowercase letters, numbers, dot, dash or underscore.';
+          err.hidden = false; return;
+        }
         if (c1 !== c2) { err.textContent = 'The two passwords do not match.'; err.hidden = false; return; }
         if (c1.length < 8) { err.textContent = 'Use at least 8 characters.'; err.hidden = false; return; }
 
         go.disabled = true; go.textContent = 'Creating…';
         try {
-          var r = await api('/api/signup', { method: 'POST', body: { token: token, name: name, code: c1 } });
+          var r = await api('/api/signup', { method: 'POST',
+            body: { token: token, name: name, username: username, code: c1 } });
           store(TOKEN_KEY, r.token);
           store(SESSION_KEY, r.user);
           location.hash = '#/';
@@ -355,7 +370,7 @@
           var passed = Object.keys(s.drills || {}).filter(function (k) { return s.drills[k].passed; }).length;
           return '<tr' + (s.active ? '' : ' style="opacity:.45"') + '>' +
             '<td><b>' + esc(s.name) + '</b>' + (s.role === 'instructor' ? ' <span class="chip">instructor</span>' : '') +
-              '<br><small>' + esc(s.id) + (s.active ? '' : ' — revoked') + '</small></td>' +
+              '<br><small>' + esc(s.username || s.id) + (s.active ? '' : ' — revoked') + '</small></td>' +
             '<td>' + mods + ' / ' + totalModules + '</td>' +
             '<td>' + (avg === null ? '—' : avg + '%') + '</td>' +
             '<td>' + passed + ' / ' + totalDrills + '</td>' +
@@ -378,7 +393,8 @@
             'the student chooses their own password and you never handle it.</p>' +
             '<div class="admin-form">' +
               '<input id="nsName" placeholder="Full name">' +
-              '<input id="nsCode" placeholder="Access code (8+ chars)">' +
+              '<input id="nsUser" placeholder="Username">' +
+              '<input id="nsCode" placeholder="Password (8+ chars)">' +
               '<select id="nsRole"><option value="student">Student</option><option value="instructor">Instructor</option></select>' +
               '<button class="btn primary" id="nsGo">Add</button>' +
             '</div><p class="admin-msg" id="nsMsg"></p>' +
@@ -405,6 +421,7 @@
           try {
             await api('/api/admin/students', { method: 'POST', body: {
               name: pane.querySelector('#nsName').value.trim(),
+              username: pane.querySelector('#nsUser').value.trim().toLowerCase(),
               code: pane.querySelector('#nsCode').value,
               role: pane.querySelector('#nsRole').value
             }});

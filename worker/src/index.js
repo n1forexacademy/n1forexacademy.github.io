@@ -30,9 +30,19 @@
      POST /api/enroll               x-admin-key           -> bootstrap only
 */
 
-const PBKDF2_ITERATIONS = 150000;
+/* PBKDF2 cost.
+   Cloudflare Workers allow roughly 10ms CPU per request on the free plan, and
+   PBKDF2 is the only expensive thing here. 150k iterations exceeded that and
+   the Worker was killed with error 1101 on every sign-in.
+
+   Login now does exactly ONE hash (indexed username lookup, then verify), so
+   this figure only has to fit a single derivation. Do not raise it without
+   re-running test/run-tests.sh against the deployed Worker — the failure mode
+   is a hard 1101, not a slow response. */
+const PBKDF2_ITERATIONS = 25000;
 const SESSION_DAYS = 30;
 const MIN_CODE_LENGTH = 8;
+const USERNAME_RE = /^[a-z0-9][a-z0-9._-]{2,31}$/;
 
 const enc = new TextEncoder();
 
@@ -146,38 +156,50 @@ function mergeProgress(current, patch) {
   return p;
 }
 
-async function upsertStudent(env, { id, name, role, code }) {
+async function upsertStudent(env, { id, name, role, code, username }) {
   const { hash, salt } = await hashCode(code);
   await env.DB.prepare(
-    `INSERT INTO students (id, name, role, code_hash, code_salt, active, created_at)
-     VALUES (?,?,?,?,?,1,?)
+    `INSERT INTO students (id, name, role, code_hash, code_salt, active, created_at, username)
+     VALUES (?,?,?,?,?,1,?,?)
      ON CONFLICT(id) DO UPDATE SET name=excluded.name, role=excluded.role,
-       code_hash=excluded.code_hash, code_salt=excluded.code_salt, active=1`
-  ).bind(id, name, role || 'student', hash, salt, Date.now()).run();
+       code_hash=excluded.code_hash, code_salt=excluded.code_salt, active=1,
+       username=excluded.username`
+  ).bind(id, name, role || 'student', hash, salt, Date.now(), String(username).toLowerCase()).run();
+}
+
+async function usernameTaken(env, username) {
+  const row = await env.DB.prepare('SELECT id FROM students WHERE username = ?')
+    .bind(String(username).toLowerCase()).first();
+  return !!row;
 }
 
 /* ---------- public routes ---------- */
 
 async function handleLogin(request, env) {
   const body = await request.json().catch(() => ({}));
-  const code = String(body.code || '').trim();
-  const name = String(body.name || '').trim().slice(0, 60);
-  if (!code) return json({ error: 'Access code required.' }, 400, env, request);
-
-  const { results } = await env.DB.prepare(
-    'SELECT id, name, role, code_hash, code_salt FROM students WHERE active = 1'
-  ).all();
-
-  let matched = null;
-  for (const row of results || []) {
-    const attempt = await pbkdf2(code, row.code_salt);
-    if (safeEqual(attempt, row.code_hash)) { matched = row; break; }
+  const username = String(body.username || '').trim().toLowerCase();
+  const code = String(body.code || '');
+  if (!username || !code) {
+    return json({ error: 'Username and password are required.' }, 400, env, request);
   }
-  if (!matched) return json({ error: 'That code was not recognised.' }, 401, env, request);
 
-  const token = await newSession(env, matched.id, name || matched.name);
-  return json({ token, user: { id: matched.id, name: name || matched.name,
-                               seat: matched.name, role: matched.role } }, 200, env, request);
+  // Indexed lookup, then exactly one PBKDF2. Constant cost regardless of how
+  // many students exist — see the note on PBKDF2_ITERATIONS.
+  const row = await env.DB.prepare(
+    'SELECT id, name, role, code_hash, code_salt FROM students WHERE username = ? AND active = 1'
+  ).bind(username).first();
+
+  // Same message whether the username or the password was wrong, so the
+  // response does not reveal which usernames exist.
+  const GENERIC = 'Username or password not recognised.';
+  if (!row) return json({ error: GENERIC }, 401, env, request);
+
+  const attempt = await pbkdf2(code, row.code_salt);
+  if (!safeEqual(attempt, row.code_hash)) return json({ error: GENERIC }, 401, env, request);
+
+  const token = await newSession(env, row.id, row.name);
+  return json({ token, user: { id: row.id, name: row.name, username: username,
+                               seat: row.name, role: row.role } }, 200, env, request);
 }
 
 async function handleInviteLookup(token, env, request) {
@@ -198,9 +220,14 @@ async function handleSignup(request, env) {
   const b = await request.json().catch(() => ({}));
   const token = String(b.token || '').trim();
   const name = String(b.name || '').trim().slice(0, 60);
+  const username = String(b.username || '').trim().toLowerCase();
   const code = String(b.code || '');
 
   if (!name) return json({ error: 'Please enter your name.' }, 400, env, request);
+  if (!USERNAME_RE.test(username)) {
+    return json({ error: 'Username must be 3–32 characters: lowercase letters, numbers, dot, dash or underscore.' },
+                400, env, request);
+  }
   if (code.length < MIN_CODE_LENGTH)
     return json({ error: `Choose a password of at least ${MIN_CODE_LENGTH} characters.` }, 400, env, request);
 
@@ -214,33 +241,29 @@ async function handleSignup(request, env) {
   if (inv.uses >= inv.max_uses)
     return json({ error: 'This invite link has already been used.' }, 400, env, request);
 
-  // Reject a password already in use — codes are the only identifier at login,
-  // so two identical ones would make sign-in ambiguous.
-  const { results } = await env.DB.prepare(
-    'SELECT code_hash, code_salt FROM students WHERE active = 1'
-  ).all();
-  for (const row of results || []) {
-    if (safeEqual(await pbkdf2(code, row.code_salt), row.code_hash)) {
-      return json({ error: 'That password is already taken. Please choose a different one.' }, 409, env, request);
-    }
+  // One indexed lookup. Two students may now share a password — that is normal
+  // and safe, because the username identifies them.
+  if (await usernameTaken(env, username)) {
+    return json({ error: 'That username is taken. Please choose another.' }, 409, env, request);
   }
 
   const id = slugify(name) + '-' + randomHex(3);
-  await upsertStudent(env, { id, name, role: inv.role, code });
+  await upsertStudent(env, { id, name, role: inv.role, code, username });
   await env.DB.prepare('UPDATE invites SET uses = uses + 1 WHERE id = ?').bind(inv.id).run();
   await env.DB.prepare(
     'INSERT OR IGNORE INTO invite_uses (invite_id, student_id, used_at) VALUES (?,?,?)'
   ).bind(inv.id, id, Date.now()).run();
 
   const sessionToken = await newSession(env, id, name);
-  return json({ token: sessionToken, user: { id, name, seat: name, role: inv.role } }, 200, env, request);
+  return json({ token: sessionToken,
+                user: { id, name, username, seat: name, role: inv.role } }, 200, env, request);
 }
 
 /* ---------- instructor admin routes ---------- */
 
 async function listStudents(env, request) {
   const { results } = await env.DB.prepare(
-    `SELECT st.id, st.name, st.role, st.active, st.created_at, p.data, p.updated_at
+    `SELECT st.id, st.name, st.username, st.role, st.active, st.created_at, p.data, p.updated_at
        FROM students st LEFT JOIN progress p ON p.student_id = st.id
       ORDER BY st.role DESC, st.name`
   ).all();
@@ -248,7 +271,7 @@ async function listStudents(env, request) {
     let data = {};
     try { data = r.data ? JSON.parse(r.data) : {}; } catch (e) {}
     return {
-      id: r.id, seat: r.name, name: data.name || r.name, role: r.role,
+      id: r.id, seat: r.name, name: data.name || r.name, username: r.username, role: r.role,
       active: !!r.active, createdAt: r.created_at,
       modules: data.modules || {}, drills: data.drills || {},
       updatedAt: r.updated_at || null
@@ -261,14 +284,22 @@ async function createStudent(user, request, env) {
   const b = await request.json().catch(() => ({}));
   const name = String(b.name || '').trim();
   const code = String(b.code || '');
+  const username = String(b.username || '').trim().toLowerCase();
   const role = b.role === 'instructor' ? 'instructor' : 'student';
   if (!name) return json({ error: 'Name is required.' }, 400, env, request);
+  if (!USERNAME_RE.test(username)) {
+    return json({ error: 'Username must be 3–32 characters: lowercase letters, numbers, dot, dash or underscore.' },
+                400, env, request);
+  }
   if (code.length < MIN_CODE_LENGTH)
-    return json({ error: `Code must be at least ${MIN_CODE_LENGTH} characters.` }, 400, env, request);
+    return json({ error: `Password must be at least ${MIN_CODE_LENGTH} characters.` }, 400, env, request);
+  if (await usernameTaken(env, username)) {
+    return json({ error: 'That username is taken.' }, 409, env, request);
+  }
 
   const id = String(b.id || '').trim() || slugify(name) + '-' + randomHex(3);
-  await upsertStudent(env, { id, name, role, code });
-  return json({ ok: true, id, name, role }, 200, env, request);
+  await upsertStudent(env, { id, name, role, code, username });
+  return json({ ok: true, id, name, username, role }, 200, env, request);
 }
 
 async function revokeStudent(user, request, env) {
@@ -343,13 +374,18 @@ async function handleEnroll(request, env) {
   const id = String(b.id || '').trim();
   const name = String(b.name || '').trim();
   const code = String(b.code || '').trim();
+  const username = String(b.username || b.id || '').trim().toLowerCase();
   const role = b.role === 'instructor' ? 'instructor' : 'student';
   if (!id || !name || !code) return json({ error: 'id, name and code are required.' }, 400, env, request);
+  if (!USERNAME_RE.test(username)) {
+    return json({ error: 'username must be 3–32 chars: lowercase letters, numbers, dot, dash or underscore.' },
+                400, env, request);
+  }
   if (code.length < MIN_CODE_LENGTH)
-    return json({ error: `Use a code of at least ${MIN_CODE_LENGTH} characters.` }, 400, env, request);
+    return json({ error: `Use a password of at least ${MIN_CODE_LENGTH} characters.` }, 400, env, request);
 
-  await upsertStudent(env, { id, name, role, code });
-  return json({ ok: true, id, name, role }, 200, env, request);
+  await upsertStudent(env, { id, name, role, code, username });
+  return json({ ok: true, id, name, username, role }, 200, env, request);
 }
 
 /* ---------- entry ---------- */
