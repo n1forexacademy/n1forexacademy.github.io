@@ -17,6 +17,14 @@
 .brand .n1-mark{width:32px;height:32px}
 .brand-text{font-size:.95rem;font-weight:800;letter-spacing:.06em}
 
+/* ---------- theme toggle ---------- */
+.theme-btn{
+  appearance:none;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:9px;width:32px;height:32px;font-size:1rem;line-height:1;
+  color:var(--ink-2);cursor:pointer;margin-left:auto;flex:0 0 auto;
+}
+.theme-btn:hover{border-color:var(--gold);color:var(--gold)}
+
 /* ---------- certificate ---------- */
 .cert-wrap{max-width:900px;margin:0 auto}
 .cert{

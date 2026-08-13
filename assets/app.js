@@ -583,6 +583,19 @@
     // navigation that matches their job rather than the student's.
     var badge = document.querySelector('.brand .brand-mark');
     if (badge && window.BRAND) badge.outerHTML = BRAND.mark(32);
+    var tb = document.getElementById('themeBtn');
+    if (tb && !tb._wired) {
+      tb._wired = true;
+      var saved = null;
+      try { saved = localStorage.getItem('n1fx:theme'); } catch (e) {}
+      if (saved) document.documentElement.setAttribute('data-theme', saved);
+      tb.onclick = function () {
+        var now = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', now);
+        try { localStorage.setItem('n1fx:theme', now); } catch (e) {}
+      };
+    }
+
     var nav = document.querySelector('.topnav');
     if (nav) {
       nav.innerHTML = Auth.isInstructor()
