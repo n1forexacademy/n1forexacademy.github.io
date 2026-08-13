@@ -58,11 +58,11 @@
 
     var rows = ls.map(function (L, i) {
       var status = done[i] ? 'done' : (i === cur ? 'current' : 'locked');
-      var slideCount = (L.slides || []).length;
+      var written = !!L.teach;
       var inner =
         '<span class="lsn-i">' + (status === 'done' ? '✓' : status === 'locked' ? '🔒' : (i + 1)) + '</span>' +
         '<span class="lsn-b">' +
-          '<span class="lsn-k">Lesson ' + (i + 1) + ' · ' + slideCount + ' page' + (slideCount === 1 ? '' : 's') +
+          '<span class="lsn-k">Lesson ' + (i + 1) + ' · ' + (written ? 'read' : 'read') +
             ' + ' + (L.check || []).length + '-question check</span>' +
           '<span class="lsn-t">' + esc(L.title) + '</span>' +
         '</span>';
@@ -134,7 +134,16 @@
       return '<div class="teach">' + paras(t.lead) + terms + paras(t.close) + '</div>';
     }
 
+    /* Students never see slides.
+
+       Slides are presenter aids for the instructor's own screen during a
+       face-to-face session. A student working alone gets the written lesson and
+       then the check — nothing else. Where written teaching has not been
+       authored yet the slides stand in as a stopgap so the course still works,
+       but that is temporary and should disappear as `teach` is written for
+       every lesson. */
     var hasTeach = !!L.teach;
+    var showSlides = !hasTeach && slides.length > 0;
     var state = { page: 0, phase: hasTeach ? 'teach' : 'read' };
 
     function draw() {
@@ -147,15 +156,10 @@
           teachHtml() +
           '<div class="lsn-nav">' +
             '<a class="btn" href="#/m/' + mod.id + '">All lessons</a>' +
-            '<button class="btn primary" id="lToPoints">' +
-              (slides.length ? 'Got it — show me the key points →' : 'Got it — take the check →') +
-            '</button>' +
+            '<button class="btn primary" id="lToPoints">Got it — check what I have learned →</button>' +
           '</div>';
         mount.querySelector('#lToPoints').onclick = function () {
-          state.phase = slides.length ? 'read' : 'check';
-          state.page = 0;
-          draw();
-          window.scrollTo(0, 0);
+          state.phase = 'check'; state.page = 0; draw(); window.scrollTo(0, 0);
         };
         return;
       }
