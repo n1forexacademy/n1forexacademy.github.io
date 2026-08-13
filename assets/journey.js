@@ -20,35 +20,49 @@
     return (window.DRILLS || []).filter(function (d) { return d.id === id; })[0] || null;
   }
 
+  /* Inline SVG icons. Emoji rendered inconsistently across platforms and
+     looked cheap beside the serif certificate — these inherit currentColor
+     and sit on the same optical grid. */
+  var ICON = {
+    module: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a1.5 1.5 0 0 0-1.5-1.5H5.5A1.5 1.5 0 0 1 4 16z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a1.5 1.5 0 0 1 1.5-1.5h5A1.5 1.5 0 0 0 20 16z"/></svg>',
+    drill:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M6 20v-5"/><path d="M11 20V9"/><path d="M16 20v-8"/><path d="M21 20V5"/></svg>',
+    gate:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+    cert:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><path d="M8.2 13.4 7 22l5-2.5L17 22l-1.2-8.6"/></svg>',
+    demo:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5.5-5.5 2 2-5.5z"/></svg>',
+    live:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 7.2-7.2"/><path d="m17 6 2 2"/><path d="m14 9 2 2"/></svg>',
+    lock:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
+    tick:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5.5 5.5L20 7"/></svg>'
+  };
+
   /* Label, destination and description for one step. */
   function stepMeta(step) {
     if (step.type === 'module') {
       var m = moduleById(step.ref);
       return { kind: 'Module ' + step.ref, title: m ? m.title : 'Module ' + step.ref,
-               desc: m ? m.tagline : '', href: '#/m/' + step.ref, icon: '📘' };
+               desc: m ? m.tagline : '', href: '#/m/' + step.ref, icon: ICON.module };
     }
     if (step.type === 'drill') {
       var d = drillById(step.ref);
       return { kind: 'Practical drill', title: d ? d.title : step.ref,
-               desc: d ? d.brief : '', href: '#/drill/' + step.ref, icon: '📈' };
+               desc: d ? d.brief : '', href: '#/drill/' + step.ref, icon: ICON.drill };
     }
     if (step.type === 'gate') {
-      return { kind: 'Instructor check', title: step.title, desc: step.detail || '', href: null, icon: '🖊️' };
+      return { kind: 'Instructor check', title: step.title, desc: step.detail || '', href: null, icon: ICON.gate };
     }
     if (step.type === 'cert') {
       // Each track has its own certificate page.
       return { kind: 'Milestone', title: step.title, desc: 'Your certificate of completion.',
                href: '#/certificate' + (step.track && step.track !== 'forex' ? '/' + step.track : ''),
-               icon: '🎓' };
+               icon: ICON.cert };
     }
     if (step.type === 'demo') {
       return { kind: 'Supervised practice', title: step.title,
-               desc: 'Trade a real broker demo account and log every week.', href: '#/demo', icon: '🧭' };
+               desc: 'Trade a real broker demo account and log every week.', href: '#/demo', icon: ICON.demo };
     }
     if (step.type === 'live') {
-      return { kind: 'Final review', title: step.title, desc: step.detail || '', href: null, icon: '🔑' };
+      return { kind: 'Final review', title: step.title, desc: step.detail || '', href: null, icon: ICON.live };
     }
-    return { kind: '', title: step.id, desc: '', href: null, icon: '•' };
+    return { kind: '', title: step.id, desc: '', href: null, icon: ICON.module };
   }
 
   /* Which track the student is currently viewing. Defaults to the furthest
@@ -125,7 +139,7 @@
         var m = stepMeta(d.step);
         var cls = 'jstep ' + d.status;
         var inner =
-          '<span class="jicon">' + (d.status === 'done' ? '✓' : d.status === 'locked' ? '🔒' : m.icon) + '</span>' +
+          '<span class="jicon">' + (d.status === 'done' ? ICON.tick : d.status === 'locked' ? ICON.lock : m.icon) + '</span>' +
           '<span class="jbody">' +
             '<span class="jkind">' + esc(m.kind) + (d.overridden ? ' · unlocked by instructor' : '') + '</span>' +
             '<span class="jtitle">' + esc(m.title) + '</span>' +

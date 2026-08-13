@@ -98,6 +98,7 @@
       : '<p class="muted">Nobody enrolled yet. Create an invite link from Admin → Invite links.</p>';
 
     body.innerHTML =
+      inviteCard() +
       '<div class="dstats">' +
         stat(students.length, 'students enrolled') +
         stat(needsYou.length, 'waiting on you', needsYou.length ? 'urgent' : '') +
@@ -111,6 +112,68 @@
     body.querySelectorAll('[data-open]').forEach(function (b) {
       b.onclick = function () { location.hash = '#/instructor'; };
     });
+    wireInvite(body);
+  }
+
+  /* Inviting a student is the thing an instructor does most often, so it lives
+     on the dashboard itself rather than behind Admin → Invite links. */
+  function inviteCard() {
+    return '<section class="invite-card" id="inviteCard">' +
+      '<div class="invite-head">' +
+        '<h2>Invite a student</h2>' +
+        '<p>Creates a single-use link. They open it, choose their own username and password, ' +
+        'and appear in your roster. You never handle their credentials.</p>' +
+      '</div>' +
+      '<div class="invite-row">' +
+        '<input id="invLabel" placeholder="Who is this for? e.g. Sam — October intake">' +
+        '<button class="btn primary" id="invGo">Create invite link</button>' +
+      '</div>' +
+      '<div id="invOut"></div>' +
+    '</section>';
+  }
+
+  function wireInvite(root) {
+    var btn = root.querySelector('#invGo');
+    if (!btn) return;
+    btn.onclick = async function () {
+      var label = (root.querySelector('#invLabel').value || '').trim() || 'Student invite';
+      btn.disabled = true; btn.textContent = 'Creating…';
+      try {
+        var r = await Auth.call('/api/admin/invites', {
+          method: 'POST', body: { label: label, maxUses: 1, expiresDays: 14 }
+        });
+        var link = location.origin + location.pathname + '#/join/' + r.token;
+        root.querySelector('#invOut').innerHTML =
+          '<div class="invite-result">' +
+            '<div class="invite-note"><b>Link ready — copy it now.</b> ' +
+            'It is shown once, works for one student, and expires in 14 days.</div>' +
+            '<div class="invite-linkrow">' +
+              '<input id="invLink" readonly value="' + esc(link) + '">' +
+              '<button class="btn" id="invCopy">Copy</button>' +
+            '</div>' +
+            '<p class="invite-hint">Send it however you normally reach them — message, email, ' +
+            'whatever. Anyone with the link can claim this one seat, so send it directly to the ' +
+            'person rather than posting it anywhere public.</p>' +
+          '</div>';
+        var input = root.querySelector('#invLink');
+        input.focus(); input.select();
+        root.querySelector('#invCopy').onclick = function () {
+          var copyBtn = this;
+          navigator.clipboard.writeText(link).then(function () {
+            copyBtn.textContent = 'Copied ✓';
+            setTimeout(function () { copyBtn.textContent = 'Copy'; }, 2500);
+          }).catch(function () {
+            input.select();
+            copyBtn.textContent = 'Press Ctrl+C';
+          });
+        };
+      } catch (e) {
+        root.querySelector('#invOut').innerHTML =
+          '<div class="invite-result err">Could not create the link: ' +
+          esc(e.message || 'the server did not respond') + '</div>';
+      }
+      btn.disabled = false; btn.textContent = 'Create invite link';
+    };
   }
 
   function quickLinks() {
