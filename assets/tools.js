@@ -174,7 +174,7 @@
       var p = v.win / 100, f = v.risk / 100, floor = 1 - v.ruin / 100;
       var n = Math.max(10, Math.min(500, v.trades | 0));
       var sims = Math.max(400, Math.min(3000, Math.floor(ITER_BUDGET / n)));
-      var ruined = 0, worstSum = 0, endSum = 0;
+      var ruined = 0, worstSum = 0, ends = [];
       for (var s = 0; s < sims; s++) {
         var eq = 1, peak = 1, worst = 0, dead = false;
         for (var t = 0; t < n; t++) {
@@ -186,15 +186,21 @@
           if (eq <= floor) { dead = true; break; }
         }
         if (dead) ruined++;
-        worstSum += worst; endSum += eq;
+        worstSum += worst; ends.push(eq);
       }
+      // Report the MEDIAN outcome, not the mean. With fixed-fractional sizing a
+      // few runs compound explosively and drag the average to a figure no
+      // typical trader would ever see — the median describes the middle result.
+      ends.sort(function (a, b) { return a - b; });
+      var median = ends[Math.floor(ends.length / 2)];
       var exp = p * v.rr - (1 - p);
       return [
         { label: 'Chance of hitting ' + num(v.ruin, 0) + '% down', value: pct(ruined / sims * 100, 1), big: true,
           cls: ruined / sims > 0.2 ? 'bad' : ruined / sims > 0.05 ? 'warn' : 'good' },
         { label: 'Average worst drawdown', value: pct(worstSum / sims * 100, 1) },
-        { label: 'Average ending equity', value: pct((endSum / sims - 1) * 100, 1),
-          cls: endSum / sims >= 1 ? 'good' : 'bad' },
+        { label: 'Median ending equity', value: pct((median - 1) * 100, 1),
+          cls: median >= 1 ? 'good' : 'bad',
+          note: 'the middle outcome — the average is distorted by a few runs that compound wildly' },
         { label: 'Expectancy per trade', value: num(exp) + ' R',
           cls: exp > 0 ? 'good' : 'bad',
           note: exp <= 0 ? 'negative edge — ruin is a matter of time, not chance' : '' },
