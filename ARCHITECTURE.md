@@ -83,6 +83,7 @@ assets/
   terminal.js           Terminal UI. Canvas chart, order ticket, panels, guard modal.
   tools.js              Sixteen trader calculators.
   labs.js               Analysis lab renderer and marking. Read its header note.
+  messages.js           Student/instructor messaging. Server mode only. §7.1.
   ea-editor.js          Code lab: editor, console, marking, and the run deadline.
   ea-runtime.js         RUNS IN A WEB WORKER. Never load this as a page script —
                         it is started by URL from ea-editor.js. See §5.1.
@@ -90,9 +91,9 @@ assets/
   optsim.js             Options practice surface: live chain, decay, IV crush.
 
 worker/                 OPTIONAL backend. Only needed for server mode (§7).
-  src/index.js          Auth + progress API (Cloudflare Worker).
+  src/index.js          Auth + progress + messaging API (Worker). §7.1.
   schema.sql            D1 tables: students, sessions, progress.
-  migrations/           002 invites, 003 usernames. Apply in order.
+  migrations/           002 invites, 003 usernames, 004 messages. In order.
   test/run-tests.sh     43-assertion suite against the live Worker.
   wrangler.toml         Config. database_id and ALLOWED_ORIGINS go here.
 
@@ -800,6 +801,44 @@ Migrating hosting is not disruptive: Cloudflare Pages builds from the same repo 
 empty and output directory `/`. The site itself needs no changes.
 
 ---
+
+### 7.1 Messaging
+
+Two-way, student to instructor only. Added 14 August 2026 because the platform
+told students to "ask your instructor" in three places and gave them no way to do it.
+
+**One thread per student.** There is no recipient column in `messages` — `student_id` *is* the
+thread, and the instructor is the other end of all of them. That makes the access rule short enough
+to state in one sentence, which is why it is enforceable. A general recipient field would invite
+student-to-student messaging, which needs moderation nobody is here to do.
+
+**Access is decided in exactly one function**, `threadIdFor(user, requested)` in
+`worker/src/index.js`. A student gets their own thread and nothing else; an instructor must name a
+student. Every messaging handler goes through it. Verified against the live Worker:
+
+| Attempt | Result |
+|---|---|
+| Student reads another student's thread by id | **403** |
+| Student posts into another student's thread | **403** |
+| Student calls `/api/admin/threads` | **403** |
+| No token at all | **401** |
+| Empty body | **400** |
+
+**Reading a thread marks the other side's messages read**, in the same request. A separate
+mark-as-read call is one round trip that can fail, and a badge stuck on a message the person has
+plainly read is worse than no badge.
+
+**Message bodies are escaped and rendered as text with line breaks. No markdown, deliberately.**
+The moment a student can write markup into something that renders in the instructor's browser, it
+stops being correspondence. Verified: `<img onerror>` and `<script>` sent by a student appear as
+literal text in the instructor's view, create no elements, and execute nothing.
+
+**Endpoints** (`GET`/`POST /api/messages`, `GET /api/messages/unread`, `GET /api/admin/threads`)
+sit *above* the instructor-only gate on purpose — both sides use the same routes, and who may see
+what is decided by `threadIdFor`, not by which side of a gate a route is written on.
+
+The unread badge attaches to any element carrying `data-msg-link` and polls once a minute, skipping
+hidden tabs.
 
 ## 8. Verifying a change
 

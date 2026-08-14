@@ -1,3 +1,0 @@
-INSERT OR REPLACE INTO sessions (token_hash,student_id,display_name,created_at,expires_at) VALUES ('5ccdfd1023b497994bc7fd4de2adb68c452b7191e8cf17438c9a802009f5a033','msgtest-a','Msg Test A',1786713261114,1786716861114);
-INSERT OR REPLACE INTO sessions (token_hash,student_id,display_name,created_at,expires_at) VALUES ('af7ef799337b95dc51c324e0f07efdf10363369ce6d78dd3ba4719cfa082cbed','msgtest-b','Msg Test B',1786713261114,1786716861114);
-INSERT OR REPLACE INTO sessions (token_hash,student_id,display_name,created_at,expires_at) VALUES ('e918feedbc6572172e3dafbd4a1ad1b1c0649fbe87e587ab3ffc84da0785677b','forex-academy-127b52','Jonathan Afolayan',1786713261114,1786716861114);
