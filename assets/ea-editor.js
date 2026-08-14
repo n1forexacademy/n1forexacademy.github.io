@@ -163,13 +163,24 @@
       if (document.visibilityState !== 'hidden') visibleMs += now - last;
       last = now;
 
-      if (visibleMs < RUN_TIMEOUT_MS && (now - started) < WALL_CAP) return;
+      var spentVisible = visibleMs >= RUN_TIMEOUT_MS;
+      if (!spentVisible && (now - started) < WALL_CAP) return;
 
-      finish({ ok: false, phase: 'timeout',
-        error: 'Your EA ran for ' + (RUN_TIMEOUT_MS / 1000) + ' seconds without finishing, so it was ' +
-               'stopped. That is almost always a loop with no way out — check any `for` or `while` ' +
-               'you have written. OnTick is called for you on every price change; it should do its ' +
-               'work once and return, never loop waiting for the next one.' });
+      /* Only blame the student's code when it actually had the processor for
+         the full budget. If the wall-clock backstop tripped while the tab was
+         throttled in the background, the honest thing to say is that we stopped
+         waiting — not that they wrote an infinite loop. Measured: a five-bar run
+         took 23.7 seconds to report back from a hidden tab. */
+      finish(spentVisible
+        ? { ok: false, phase: 'timeout',
+            error: 'Your EA ran for ' + (RUN_TIMEOUT_MS / 1000) + ' seconds without finishing, so it was ' +
+                   'stopped. That is almost always a loop with no way out — check any `for` or `while` ' +
+                   'you have written. OnTick is called for you on every price change; it should do its ' +
+                   'work once and return, never loop waiting for the next one.' }
+        : { ok: false, phase: 'background',
+            error: 'This run was stopped because the page spent too long in the background, where ' +
+                   'browsers slow tabs down heavily. This is not a fault in your code. Bring this tab ' +
+                   'to the front and run it again.' });
     }, 250);
 
     worker.postMessage({ id: 1, code: code, task: task });
@@ -318,6 +329,9 @@
           (reply && reply.phase === 'compile'
             ? '<p class="muted">The code could not be read as JavaScript at all, so nothing was ' +
               'executed. A missing bracket or semicolon is the usual cause.</p>'
+            : '') +
+          (reply && reply.phase === 'background'
+            ? '<p class="muted">Nothing you wrote caused this, and nothing has been marked against you.</p>'
             : '') +
           '</div>';
         consoleEl.textContent = 'The run did not produce any output.';

@@ -25,9 +25,9 @@ Nine tracks, unlocked in sequence, each ending in its own certificate:
 | Crypto & Digital Assets | 5 (ids 501–505) | 10 | 3 labs | Options certificate |
 | Commodities | 5 (ids 601–605) | 10 | 3 labs | Crypto certificate |
 | Spread Betting | 4 (ids 701–704) | 8 | 2 labs | Commodities certificate |
-| Trading Automation | 6 (ids 801–806) | 12 | 3 labs | Spread Betting certificate |
+| Trading Automation | 6 (ids 801–806) | 12 | 3 labs + 5 code labs | Spread Betting certificate |
 
-**57 modules, 146 lessons, 38 practical pieces.** Tracks unlock in a strict chain; each ends in its
+**57 modules, 146 lessons, 43 practical pieces.** Tracks unlock in a strict chain; each ends in its
 own certificate. The order is pedagogical, not alphabetical — futures builds on forex margin and
 equity exchange mechanics, options is the hardest instrument and assumes all of it, crypto sits late
 because it is the easiest to start trading and the fastest to end you, commodities builds directly on
@@ -43,10 +43,11 @@ because it needs the written plan from module 11 to translate.
 Each module is delivered lesson-by-lesson: read a short lesson, pass a two-question check on it,
 then the next opens. The module test unlocks only when every lesson is passed.
 
-Plus a **Trading Floor** carrying all 38 practical pieces: **10 simulator drills** (7 fx, 2 share,
-1 futures), **3 options labs** on a live chain, and **25 analysis labs**. Three surfaces, one
-progress store — the path engine cannot tell them apart, which is why adding a surface never touches
-gating. See §4 for instrument kinds, §4.1 for options, §5 for labs.
+Plus a **Trading Floor** carrying all 43 practical pieces: **10 simulator drills** (7 fx, 2 share,
+1 futures), **3 options labs** on a live chain, **25 analysis labs**, and **5 code labs** where the
+student writes an EA and runs it. Four surfaces, one progress store — the path engine cannot tell
+them apart, which is why adding a surface never touches gating. See §4 for instrument kinds, §4.1
+for options, §5 for labs, §5.1 for the code labs.
 
 ---
 
@@ -82,6 +83,9 @@ assets/
   terminal.js           Terminal UI. Canvas chart, order ticket, panels, guard modal.
   tools.js              Sixteen trader calculators.
   labs.js               Analysis lab renderer and marking. Read its header note.
+  ea-editor.js          Code lab: editor, console, marking, and the run deadline.
+  ea-runtime.js         RUNS IN A WEB WORKER. Never load this as a page script —
+                        it is started by URL from ea-editor.js. See §5.1.
   options.js            Black-Scholes pricing and greeks. No DOM. See §4.1.
   optsim.js             Options practice surface: live chain, decay, IV crush.
 
@@ -101,6 +105,10 @@ tools/
   check-teaching.mjs    Reports which modules teach vs still fall back to
                         slides, and flags instructor wording leaking into
                         student-facing text. Exits non-zero on any problem.
+  check-ea-tasks.mjs    Proves every code lab is solvable AND non-trivial: the
+                        solution must pass every check, the starter must fail
+                        at least one, and both runs must be deterministic.
+                        Exits non-zero. RUN AFTER TOUCHING A TASK OR A SEED.
 
 content/
   roster.js             API_BASE switch + local-mode access codes. EDIT THIS.
@@ -118,6 +126,8 @@ content/
   labs-commodities.js   3 analysis labs for the commodities track.
   labs-spreadbet.js     2 analysis labs for the spread betting track.
   labs-automation.js    3 analysis labs for the automation track.
+  ea-tasks.js           5 CODE labs (kind: 'code'). Each carries a reference
+                        solution used by tools/check-ea-tasks.mjs — see §5.1.
   drills-markets.js     3 SIMULATOR drills for shares and futures.
   drills-options.js     3 options-chain drills (kind: 'optsim').
   labs.js               7 analysis labs for equities and bonds. Worked exercises,
@@ -474,6 +484,56 @@ attempts, drawdown, compliance), not on profit. Note that `expectancy` deliberat
 30 trades regardless of whether they made money.
 
 ---
+
+### 5.1 Code labs — running a student's own EA
+
+A drill with `kind: 'code'` opens `assets/ea-editor.js`. The student writes an expert advisor and it
+runs against the same `assets/engine.js` every other drill uses.
+
+**The language is JavaScript, not MQL5, and the editor says so on the page.** Running MQL5 in a
+browser means writing an interpreter for it — much larger, much less useful. The API is instead
+*named* after MQL5 (`iMA`, `iClose`, `iTime`, `PositionsTotal`, `GlobalVariableSet`) so that the
+structure and the guards transfer even though the syntax does not. That is the honest claim and it
+is the one the track cares about.
+
+**Student code runs in a Web Worker.** Three properties, all needed:
+
+| Property | Why |
+|---|---|
+| Terminable | `while(true){}` cannot be interrupted from inside a script. The main thread terminates the worker. In the page it would freeze the tab. |
+| No DOM | A Worker has no `document` and no `localStorage`, so student code cannot reach the session token or the progress store. |
+| Fresh each run | One run cannot leave state behind that changes the next one's result. |
+
+> ⚠️ **`assets/ea-runtime.js` must NEVER be added to `index.html`.** It is started by URL as a
+> Worker. Loading it as a page script would run worker-only code in the page. It reads its cache
+> version from `Content.ASSET_V`, which is why `loader.js` exports it.
+
+**The run deadline counts only time the tab is visible.** A plain `setTimeout` is wrong here:
+browsers throttle background tabs, delaying both the timer and delivery of the worker's reply. A
+five-bar run measured **23.7 seconds** to report back from a hidden tab. With a naive timer, a
+student who clicks Run and switches tabs is told their correct EA contains an infinite loop. There
+is also a 120-second wall-clock backstop so a worker cannot spin forever — and when *that* is what
+tripped, the message says the page was backgrounded rather than blaming the code.
+
+**Marking is behavioural, never textual.** A check reads the run report — order attempts, fills,
+stop distances, risk percentages, per-bar counts, the restart — and never the source. Grading on the
+presence of a string like `isNewBar` would pass code that does not work and fail code that does.
+
+**The restart is mid-bar, deliberately.** `restartAt` recompiles the EA halfway through a bar, which
+resets every variable the student declared while leaving positions (broker-side) and
+`GlobalVariableSet` (terminal-side) intact. On a bar *boundary* it would prove nothing — the EA has
+not acted on that bar yet. The bar chosen for `ea-restart` was found by sweeping every candidate for
+one where the naive guard demonstrably duplicates and the correct one demonstrably does not.
+
+**Every task carries a `solution` that students never see.** `tools/check-ea-tasks.mjs` uses it to
+prove the task is possible, and proves the `starter` fails at least one check so the exercise is not
+free. On first run it caught three real defects: a volatility gate set at 18 pips on a feed whose
+ATR never drops below 32, a gold stop clamp that pinned every trade to the same distance, and the
+bar-boundary restart above.
+
+```bash
+node tools/check-ea-tasks.mjs
+```
 
 ## 6. The access gate — read this carefully
 
