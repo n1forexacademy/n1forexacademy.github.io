@@ -375,8 +375,61 @@ window.TRACKS = [
       {
         id: 'sb-certificate',
         title: 'Certificate',
-        blurb: 'The final certificate of the programme. Eight markets, one process.',
+        blurb: 'Certificate in Leveraged Wrappers.',
         steps: [{ id: 'cert-spreadbet', type: 'cert', title: 'Certificate in Leveraged Wrappers' }]
+      }
+    ]
+  },
+  {
+    id: 'automation',
+    title: 'Trading Automation',
+    subtitle: 'Teaching a machine to follow your rules',
+    blurb: 'The payoff to a promise module 12 made. An EA is an execution engine, not a strategy — so this is translating the plan you already wrote, not learning to program. The five components of a module 11 setup map one-to-one onto five functions.',
+    requires: 'spreadbet',
+    certificateTitle: 'Certificate in Trading Automation',
+    stages: [
+      {
+        id: 'au-foundation',
+        title: 'What it is, and the language',
+        blurb: 'An execution engine multiplies whatever you already had. Then the small corner of MQL an EA actually lives in.',
+        steps: [
+          { id: 'm801', type: 'module', ref: 801, pass: 80 },
+          { id: 'm802', type: 'module', ref: 802, pass: 80 },
+          { id: 'd-au-guards', type: 'drill', ref: 'au-guards' }
+        ]
+      },
+      {
+        id: 'au-build',
+        title: 'Translation and sizing',
+        blurb: 'Five components become five functions — and the one line that has ended more automated accounts than any strategy flaw.',
+        steps: [
+          { id: 'm803', type: 'module', ref: 803, pass: 80 },
+          { id: 'm804', type: 'module', ref: 804, pass: 85 },
+          { id: 'd-au-size', type: 'drill', ref: 'au-size' }
+        ]
+      },
+      {
+        id: 'au-live',
+        title: 'Testing, going live, and the close',
+        blurb: 'The biases the strategy tester adds, the failures that only exist live, and the end of all nine tracks.',
+        steps: [
+          { id: 'm805', type: 'module', ref: 805, pass: 85 },
+          { id: 'd-au-report', type: 'drill', ref: 'au-report' },
+          { id: 'm806', type: 'module', ref: 806, pass: 85 },
+          { id: 'g-ea-review', type: 'gate', title: 'Submit your EA for review',
+            detail: 'The capstone of the whole programme. Your instructor reads the CODE, not the results: that both guards ' +
+                    'are present, that no lot size is hard-coded anywhere, that the stop is computed from structure rather ' +
+                    'than returned from an input, that every OrderSend result is checked and logged, that a daily stop is ' +
+                    'enforced in code, and that a heartbeat exists. They will also ask to see the log-only session from ' +
+                    'Lab 803 and the timed emergency stop from Lab 806. Concluding that semi-automation is the right ' +
+                    'answer for you is a pass.' }
+        ]
+      },
+      {
+        id: 'au-certificate',
+        title: 'Certificate',
+        blurb: 'The final certificate of the programme. Nine tracks, one process.',
+        steps: [{ id: 'cert-automation', type: 'cert', title: 'Certificate in Trading Automation' }]
       }
     ]
   }

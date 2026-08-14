@@ -1,7 +1,11 @@
 /* N1 Forex Academy — lessons for Module 704 (Spread Betting track).
 
-   VOICE: Jonathan talking to one student. This is now the FINAL lesson of all
-   eight tracks — l505 was written when crypto was last and has been amended.
+   VOICE: Jonathan talking to one student. This closed the programme when spread
+   betting was the last track. Automation now follows, so the summing-up here was
+   narrowed to "eight markets behind you" and the final close moved to l806.
+
+   This is the SECOND time a lesson has had to be narrowed this way (see l505.js).
+   If you add a track, check the previous last lesson BEFORE anything else.
 
    TAX: handled deliberately. The qualifications are the content, not padding
    around it, and the losses-not-relievable point is the part promotional
@@ -60,7 +64,7 @@
     },
 
     {
-      title: 'The end of eight tracks',
+      title: 'Eight tracks in, one to go',
       slides: [3, 4, 5],
       teach: {
         lead: [
@@ -81,18 +85,17 @@
             like: 'The delivery fee. Nothing to do with the thing you bought.' }
         ],
         close: [
-          "Right. **That's the end.**",
-          "**Eight tracks. Currencies, shares, bonds, futures, options, crypto, commodities, and this.** Let me tell you what you actually learned, because it was never the eight markets.",
+          "That closes the spread betting track — **eight markets and wrappers behind you now.**",
+          "Before the last one, let me tell you what you've actually been learning, because it was never the eight markets.",
           "**You learned one risk policy.** You wrote it in module 10 and extended it seven times. **You never replaced it — not once.** Every market added clauses; none of them broke what was underneath.",
           "**You met one answer about analytical tools, over and over.** Open interest. Credit spreads. Positioning. Implied volatility. The greeks. Inventory. **Every single one: context, not signals.** That repetition is the most reliable way there is to tell a real analytical tool from something being sold to you as a system.",
           "**You met one return shape and learned to distrust it.** Many small wins, then one enormous loss. Martingale. Carry. Selling options. High leverage. **Same profile, four costumes, same ending** — and it destroys people who size for the calm periods.",
           "**You met one correlation lesson, five times.** Dollar-negative pairs. Five banks. Ten tokens. Three energy positions. **Always the same question: what do all my positions need to happen? If it's the same thing, you have one position.**",
           "**And six of the eight tracks ended by telling you that walking away from a market is a competent conclusion.** That wasn't modesty. It was the point.",
-          "So here's where you finish, and I'll say it as plainly as I can:",
-          "**You are not equipped to trade eight markets. Nobody is. Anyone claiming otherwise is describing a marketing page.**",
-          "**You are equipped to evaluate any of them, size properly, and walk away from most.** That's rarer and considerably more valuable.",
-          "The certificates say you completed a programme and can demonstrate a process. **They don't promise an outcome, and neither do I.** What you have is a process, and the ability to tell whether it's working. That's what almost nobody starting out has, and it's the only durable advantage in this entire business.",
-          "**Now go and be boring about it. Genuinely. That's the job.**"
+          "**You are not equipped to trade eight markets. Nobody is, and anyone claiming otherwise is describing a marketing page.** You're equipped to evaluate any of them, size properly, and walk away from most — which is rarer and considerably more valuable.",
+          "**One track left.**",
+          "Module 12 made you a promise, and it was slightly pointed: *if you cannot code the rules yourself, you do not understand them well enough to run them.*",
+          "**The last track is where that gets settled.** You're going to take the plan you wrote in module 11 and teach a machine to run it — and find out, in the most unforgiving way available, exactly which parts of it were ever really rules."
         ]
       },
       check: [
