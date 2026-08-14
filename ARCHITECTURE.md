@@ -215,6 +215,33 @@ feed.atr('H1', 14)           // ATR in PIPS (not price)
 
 Options: `seed`, `trend` (-1/0/+1), `regimeLock`, `volMult`, `history`.
 
+### Instrument kinds
+
+Specs carry `kind`, which decides how size, margin and P/L are computed. Adding a kind means
+touching exactly three places — `pipValue`, `Account.marginFor`, and the terminal's unit label.
+Stops, stop-out, the risk guard and every drill `test()` already generalise.
+
+| kind | Size unit | Margin | P/L per increment |
+|---|---|---|---|
+| `fx` | lots | notional ÷ account leverage | contract × pip |
+| `share` | shares (`contract: 1`) | notional ÷ leverage — **leverage 1 pays in full** | contract × pip |
+| `future` | contracts | **fixed `initialMargin` per contract**, set by the exchange | `tickValue` |
+
+Shares may also carry `gap: { every, pct, dir?, label }` — a scheduled overnight jump fired on a
+bar boundary. Price moves with nothing traded in between, so a stop inside the jump fills at the
+reopen rather than at its level. That is what makes Module 107's "size it, then gap it" something a
+student experiences rather than reads.
+
+> ⚠️ **The feed is deterministic from a seed**, so a drill replays identically for a student and
+> their instructor. Any new `this.rnd()` call inside `Feed._step` or the bar-close branch shifts
+> every existing forex drill. The gap logic is therefore guarded on `spec.gap` existing. After any
+> engine change, re-run the two documented regressions below — the module 3 stop-out must still
+> land at balance ~206, and the module 10 guard must still suggest 0.16 lots.
+
+**Not yet simulated: options.** That needs a pricing model, a strike/expiry chain, greeks and
+expiry handling — the largest single engineering item left. The options track uses analysis labs
+meanwhile.
+
 ### Instruments
 
 Defined in `FX.INSTRUMENTS`. To add one, copy an entry and set `contract`, `pip`, `digits`,
