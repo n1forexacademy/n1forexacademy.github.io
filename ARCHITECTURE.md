@@ -684,6 +684,11 @@ Note the UX cost: students would sign in to Access *and* to the academy. If you 
 usually better to drop the academy's own login and read the identity from the Access JWT header
 instead — more work, one login.
 
+> 📘 **Reproducing this stack on another project?** `FREE-STACK-GUIDE.md` in this repository is a
+> standalone, project-agnostic guide to the whole architecture — the free-tier limits, the build
+> steps, the auth design forced by the CPU budget, and the seven traps that cost real time. This
+> section stays project-specific; that document is the general one.
+
 ## 7.5 Background: why GitHub alone cannot do this
 
 **Yes — substantially.** GitHub Pages serves static files and nothing else, so real auth is
