@@ -40,10 +40,10 @@ entirely transfer.
 Each module is delivered lesson-by-lesson: read a short lesson, pass a two-question check on it,
 then the next opens. The module test unlocks only when every lesson is passed.
 
-Plus a **Trading Floor** carrying all the practical work: **10 simulator drills** (7 fx, 2 share,
-1 futures) and **22 analysis labs**. The simulator covers fx, shares and futures — see §4 on
-instrument kinds. Bonds, options, crypto, commodities and spread betting use analysis labs, worked
-exercises over supplied data. See §5.
+Plus a **Trading Floor** carrying all 35 practical pieces: **10 simulator drills** (7 fx, 2 share,
+1 futures), **3 options labs** on a live chain, and **22 analysis labs**. Three surfaces, one
+progress store — the path engine cannot tell them apart, which is why adding a surface never touches
+gating. See §4 for instrument kinds, §4.1 for options, §5 for labs.
 
 ---
 
@@ -79,6 +79,8 @@ assets/
   terminal.js           Terminal UI. Canvas chart, order ticket, panels, guard modal.
   tools.js              Sixteen trader calculators.
   labs.js               Analysis lab renderer and marking. Read its header note.
+  options.js            Black-Scholes pricing and greeks. No DOM. See §4.1.
+  optsim.js             Options practice surface: live chain, decay, IV crush.
 
 worker/                 OPTIONAL backend. Only needed for server mode (§7).
   src/index.js          Auth + progress API (Cloudflare Worker).
@@ -113,6 +115,7 @@ content/
   labs-commodities.js   3 analysis labs for the commodities track.
   labs-spreadbet.js     2 analysis labs for the spread betting track.
   drills-markets.js     3 SIMULATOR drills for shares and futures.
+  drills-options.js     3 options-chain drills (kind: 'optsim').
   labs.js               7 analysis labs for equities and bonds. Worked exercises,
                         not simulator sessions — see §5 and assets/labs.js for why.
   illustrations.js      Annotated drawings of the academy's own terminal.
@@ -249,10 +252,35 @@ student experiences rather than reads.
 > engine change, re-run the two documented regressions below — the module 3 stop-out must still
 > land at balance ~206, and the module 10 guard must still suggest 0.16 lots.
 
-**Not yet simulated: options.** That needs a pricing model, a strike/expiry chain, greeks and
-expiry handling — the largest single engineering item left. The options track uses analysis labs
-meanwhile. Bonds, crypto, commodities and spread betting are also lab-only, but those are deliberate:
-those tracks turn on judgement rather than execution.
+**Options are simulated separately** — see §4.1. Bonds, crypto, commodities and spread betting are
+lab-only, and that is deliberate: those tracks turn on judgement rather than execution.
+
+### 4.1 The options surface
+
+Options do not fit the candle-feed engine. `engine.js` is built around a price series, a margin model
+and a risk guard, none of which describe an options book, so options got their own pair of files
+rather than a compromise bolted onto both.
+
+| File | Role |
+|---|---|
+| `assets/options.js` | Black-Scholes pricing and greeks. No DOM, no dependencies, `window.OPT`. |
+| `assets/optsim.js` | The practice surface: live chain, take a position, advance time. `window.OptSim`. |
+| `content/drills-options.js` | Three drills with `kind: 'optsim'`. |
+
+**It is a teaching model, not a trading system, and the Trading Floor says so.** Real chains carry
+skew, dividends and early-exercise premium this omits. What matters pedagogically is that the
+*relationships* are faithful, and they are: extrinsic peaks at the money, decay accelerates into
+expiry, gamma is highest at the money, delta runs 0 to 1, and vega collapses when uncertainty
+resolves. Validated against textbook values — S=100, K=100, T=1, v=0.20, r=0.05 gives 10.4506 call
+and 5.5735 put with delta 0.6368, and put-call parity holds.
+
+At or past expiry `price()` returns intrinsic value and degenerate greeks rather than NaN, so a
+position can be walked all the way into expiry without the surface breaking. Do not "tidy" that
+branch away.
+
+Scenarios are staged, not simulated: a drill's `sim.schedule` says what happens on which day, which
+is the only way to produce an IV crush on demand. That also keeps it deterministic, so a drill
+replays identically for a student and their instructor.
 
 ### Instruments
 
