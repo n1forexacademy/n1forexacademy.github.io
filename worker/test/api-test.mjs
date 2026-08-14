@@ -203,6 +203,41 @@ console.log('\n8. Invite management');
   const signupOnRevoked = await call('/api/signup', { method: 'POST',
     body: { token: made.data?.token, name: 'Nope', username: 'test-nope', code: 'longenoughpw123' } });
   check('cannot sign up through a revoked invite', signupOnRevoked.status === 400, `got ${signupOnRevoked.status}`);
+
+  /* THE RACE. A single-use invite, two signups fired simultaneously.
+
+     The old code read `uses`, checked it, created the student, then incremented
+     — three statements. Both requests read uses=0, both passed the check, and a
+     one-use link issued two accounts. Enforcement now lives in a conditional
+     UPDATE, so exactly one request can change the row.
+
+     This is genuinely racy, so it is not a perfect test — but firing both with
+     Promise.all on the same link is the closest thing to the real failure, and
+     it fails reliably against the old code. */
+  const raceInv = await call('/api/admin/invites', { method: 'POST', token: instructorToken,
+    body: { label: 'Race test', maxUses: 1, expiresDays: 1 } });
+  const raceToken = raceInv.data?.token;
+  const stamp = Date.now().toString(36).slice(-5);
+
+  const [a, b] = await Promise.all([
+    call('/api/signup', { method: 'POST',
+      body: { token: raceToken, name: 'Race A', username: 'race-a-' + stamp, code: 'longenoughpw123' } }),
+    call('/api/signup', { method: 'POST',
+      body: { token: raceToken, name: 'Race B', username: 'race-b-' + stamp, code: 'longenoughpw123' } })
+  ]);
+
+  const winners = [a, b].filter((r) => r.status === 200).length;
+  check('a one-use invite issues exactly one account under a simultaneous race',
+        winners === 1, `${winners} of 2 signups succeeded — expected exactly 1`);
+
+  const losers = [a, b].filter((r) => r.status !== 200);
+  check('the losing request is refused cleanly, not with a 500',
+        losers.every((r) => r.status === 409 || r.status === 400),
+        losers.map((r) => r.status).join(','));
+
+  const spent = await call('/api/invite/' + raceToken);
+  check('the raced invite reports itself used afterwards',
+        spent.data?.valid === false, JSON.stringify(spent.data));
 }
 
 /* ---------- 9. CORS ---------- */

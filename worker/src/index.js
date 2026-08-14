@@ -316,6 +316,8 @@ async function handleSignup(request, env) {
     'SELECT id, label, role, max_uses, uses, expires_at, revoked FROM invites WHERE token_hash = ?'
   ).bind(await sha256Hex(token)).first();
 
+  // These three checks exist for the ERROR MESSAGE only. The actual enforcement
+  // is the conditional UPDATE below — see the note there.
   if (!inv || inv.revoked) return json({ error: 'This invite link is not valid.' }, 400, env, request);
   if (inv.expires_at && inv.expires_at < Date.now())
     return json({ error: 'This invite link has expired.' }, 400, env, request);
@@ -323,14 +325,47 @@ async function handleSignup(request, env) {
     return json({ error: 'This invite link has already been used.' }, 400, env, request);
 
   // One indexed lookup. Two students may now share a password — that is normal
-  // and safe, because the username identifies them.
+  // and safe, because the username identifies them. The UNIQUE index on
+  // students.username is the real guarantee; this check is for a civil message.
   if (await usernameTaken(env, username)) {
     return json({ error: 'That username is taken. Please choose another.' }, 409, env, request);
   }
 
+  /* CLAIM A SLOT ATOMICALLY, BEFORE creating anything.
+     The earlier `uses >= max_uses` check cannot enforce the limit on its own:
+     read-then-check-then-write is three statements, so two people submitting at
+     the same instant both read uses=0, both pass the check, and both increment.
+     A single-use link would issue two accounts.
+
+     Putting the condition INSIDE the UPDATE makes the check and the increment
+     one atomic operation. Exactly one of two simultaneous requests changes a
+     row; the loser sees changes === 0 and is turned away.
+
+     Revocation and expiry are re-tested here too, so a link revoked between the
+     SELECT and this line cannot still be used. */
+  const claim = await env.DB.prepare(
+    `UPDATE invites SET uses = uses + 1
+      WHERE id = ? AND uses < max_uses AND revoked = 0
+        AND (expires_at IS NULL OR expires_at > ?)`
+  ).bind(inv.id, Date.now()).run();
+
+  if (!claim || !claim.meta || claim.meta.changes !== 1) {
+    return json({ error: 'This invite link has already been used.' }, 409, env, request);
+  }
+
+  // From here the slot is spent. Anything that fails must hand it back, or a
+  // failed signup silently burns a use and the instructor cannot tell why.
   const id = slugify(name) + '-' + randomHex(3);
-  await upsertStudent(env, { id, name, role: inv.role, code, username });
-  await env.DB.prepare('UPDATE invites SET uses = uses + 1 WHERE id = ?').bind(inv.id).run();
+  try {
+    await upsertStudent(env, { id, name, role: inv.role, code, username });
+  } catch (err) {
+    await env.DB.prepare('UPDATE invites SET uses = uses - 1 WHERE id = ? AND uses > 0')
+      .bind(inv.id).run();
+    // Almost always the UNIQUE index on username: someone took it between our
+    // check above and this insert. That is the same race, one table along.
+    return json({ error: 'That username is taken. Please choose another.' }, 409, env, request);
+  }
+
   await env.DB.prepare(
     'INSERT OR IGNORE INTO invite_uses (invite_id, student_id, used_at) VALUES (?,?,?)'
   ).bind(inv.id, id, Date.now()).run();
