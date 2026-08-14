@@ -146,5 +146,17 @@ window.CATALOG = [
     level: "Physical Markets", duration: "85 min", slides: 6, quiz: 5 },
   { id: 605, track: "commodities", title: "Risk and Building a Commodities Approach",
     tagline: "The sixth extension of one risk policy, and an honest answer about how narrow a place this market should have.",
-    level: "Physical Markets", duration: "85 min", slides: 5, quiz: 5 }
+    level: "Physical Markets", duration: "85 min", slides: 5, quiz: 5 },
+  { id: 701, track: "spreadbet", title: "A Wrapper, Not a Market",
+    tagline: "Spread betting is not an asset class. It is a different container for markets you already understand — and the container changes the arithmetic without changing the risk.",
+    level: "Wrappers", duration: "70 min", slides: 5, quiz: 5 },
+  { id: 702, track: "spreadbet", title: "Sizing When the Ticket Hides the Position",
+    tagline: "One formula, used every time, converts the friendliest sizing vocabulary in trading back into something you can actually judge.",
+    level: "Wrappers", duration: "75 min", slides: 5, quiz: 5 },
+  { id: 703, track: "spreadbet", title: "Guaranteed Stops and What Protection Costs",
+    tagline: "The one genuine innovation in this wrapper: a stop that actually holds across a gap. It is not free, and knowing what it is worth is the skill.",
+    level: "Wrappers", duration: "70 min", slides: 6, quiz: 5 },
+  { id: 704, track: "spreadbet", title: "Tax, Suitability and the End of the Course",
+    tagline: "The most misunderstood feature of this wrapper, stated honestly — and then the close of all eight tracks.",
+    level: "Wrappers", duration: "80 min", slides: 6, quiz: 5 }
 ];

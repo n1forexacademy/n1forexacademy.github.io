@@ -333,5 +333,48 @@ window.TRACKS = [
         steps: [{ id: 'cert-commodities', type: 'cert', title: 'Certificate in Commodity Markets' }]
       }
     ]
+  },
+  {
+    id: 'spreadbet',
+    title: 'Spread Betting',
+    subtitle: 'A wrapper, not a market',
+    blurb: 'Deliberately last and deliberately short. This is a different container for markets you already understand, so almost everything in it is transfer — which is exactly the point. Availability is jurisdictional; much of the world does not offer it.',
+    requires: 'commodities',
+    certificateTitle: 'Certificate in Leveraged Wrappers',
+    stages: [
+      {
+        id: 'sb-wrapper',
+        title: 'The wrapper and the sizing',
+        blurb: 'What it actually is, who your counterparty is, and why the friendliest sizing vocabulary in trading is also the least informative.',
+        steps: [
+          { id: 'm701', type: 'module', ref: 701, pass: 80 },
+          { id: 'm702', type: 'module', ref: 702, pass: 85 },
+          { id: 'd-sb-size', type: 'drill', ref: 'sb-size' }
+        ]
+      },
+      {
+        id: 'sb-close',
+        title: 'Protection, tax and the close',
+        blurb: 'The one genuine innovation in this wrapper, the tax position stated with its qualifications intact, and the end of all eight tracks.',
+        steps: [
+          { id: 'm703', type: 'module', ref: 703, pass: 80 },
+          { id: 'm704', type: 'module', ref: 704, pass: 85 },
+          { id: 'd-sb-cost', type: 'drill', ref: 'sb-cost' },
+          { id: 'g-final-crossmarket', type: 'gate', title: 'Submit your complete eight-market plan',
+            detail: 'The capstone from Lab 704 and the final gate of the whole course. Your instructor checks that the ' +
+                    'cost comparison uses the student’s own realistic trade count rather than a generic example, that ' +
+                    'the tax section acknowledges losses are generally not relievable rather than treating treatment as ' +
+                    'pure benefit, that the protection rule states explicitly that protection is added AFTER sizing, and ' +
+                    'that several of the eight markets are assigned a limited role or none. It must read as ONE policy ' +
+                    'covering eight markets, not eight documents.' }
+        ]
+      },
+      {
+        id: 'sb-certificate',
+        title: 'Certificate',
+        blurb: 'The final certificate of the programme. Eight markets, one process.',
+        steps: [{ id: 'cert-spreadbet', type: 'cert', title: 'Certificate in Leveraged Wrappers' }]
+      }
+    ]
   }
 ];

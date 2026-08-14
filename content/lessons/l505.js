@@ -1,11 +1,10 @@
 /* N1 Forex Academy — lessons for Module 505 (Crypto track).
 
-   VOICE: Jonathan talking to one student. This is the LAST lesson of the whole
-   course — six tracks, 42 modules — so the second half names the structure the
-   student has been inside without seeing: one policy extended five times, one
-   verdict on analytical tools, one return shape learned to distrust, one
-   correlation lesson met three times. Ends on evaluation rather than
-   encouragement, and certifies a process rather than an outcome. */
+   VOICE: Jonathan talking to one student. This closes the crypto track and, at
+   the time it was written, closed the course. Commodities and spread betting now
+   follow, so the summing-up here was narrowed to "the six tracks behind you" and
+   the final close moved to l704. If tracks are ever added or reordered, check
+   both files — a lesson that claims to be last and is not reads badly. */
 (function () {
   var L = (window.LESSONS = window.LESSONS || {});
 
@@ -65,7 +64,7 @@
       slides: [3, 4, 5],
       teach: {
         lead: [
-          "This is the last lesson of the course. Six tracks, forty-two modules. Before we finish, let me be straight about this market and then about the whole thing.",
+          "That closes the crypto track — six markets behind you now. Before we move on, let me be straight about this one, and then about what the six have actually been teaching you.",
           "**What's genuinely here:** a real technology, real use in moving value across borders without permission, and deep liquidity in the largest assets.",
           "**Also genuinely here:** thin books outside the top few names, irreversible mistakes, uneven regulation, venue failures, and a great deal of outright fraud.",
           "**Both lists are true.** Anyone giving you only one of them is selling you something.",
@@ -82,7 +81,7 @@
             like: 'The bank being the problem, rather than the market.' }
         ],
         close: [
-          "Right. **Six tracks. Let me tell you what you actually learned**, because it isn't the six markets.",
+          "**Six tracks so far. Let me tell you what you have actually been learning**, because it isn't the six markets.",
           "**You learned one risk policy.** You wrote it in module 10, and then extended it five times — for equities, for bonds, for futures, for options, and now for crypto. **You never replaced it.** Not once. Every market added clauses; none of them broke the thing underneath.",
           "**That transfer is the course.** The markets were the material it was taught through.",
           "**You met one answer about analytical tools, five times.** Open interest, credit spreads, positioning, implied volatility, the greeks. Every single one: **context, not signal.** That repetition is the most reliable way there is to tell a genuine analytical tool from something being sold to you as a trading system.",
@@ -92,8 +91,7 @@
           "So here's where you finish, stated honestly:",
           "**You are not equipped to trade six markets. Nobody is, and anyone claiming otherwise is describing a marketing page.**",
           "**You are equipped to evaluate any of them, size properly, and decide which deserve your attention.** That's a rarer and considerably more useful thing.",
-          "The certificate says you completed a programme and can demonstrate a process. **It doesn't promise an outcome, and neither do I.** What you have is a process and the ability to tell whether it's working — which is what almost nobody starting out has, and it's the only durable advantage in this whole business.",
-          "**Now go and be boring about it. That's the job.**"
+          "Two tracks remain — commodities, where the thing you trade physically exists, and spread betting, which is a wrapper rather than a market. **Both will feel familiar**, and that familiarity is the point: by now you should be able to meet a new market and know which questions to ask before anybody tells you."
         ]
       },
       check: [
