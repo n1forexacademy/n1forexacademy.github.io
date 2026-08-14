@@ -265,7 +265,7 @@ window.TRACKS = [
       },
       {
         id: 'cr-close',
-        title: 'Risk and closing the course',
+        title: 'Risk, and six tracks in',
         blurb: 'A fifth extension of your risk policy, and an honest account of what six tracks did and did not equip you to do.',
         steps: [
           { id: 'm505', type: 'module', ref: 505, pass: 85 },
