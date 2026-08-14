@@ -519,6 +519,45 @@ async function handleEnroll(request, env) {
 const MAX_BODY = 4000;
 const MAX_PER_DAY = 60;      // a civil ceiling, not a real rate limiter
 
+/* Attachments. The browser compresses before sending (see assets/messages.js),
+   so anything arriving near this ceiling did not come from our own UI. */
+const MAX_IMAGE_BYTES = 600 * 1024;
+const MAX_IMAGES_PER_MESSAGE = 3;
+
+/* Magic bytes, checked on EVERY upload.
+
+   The client re-encodes through a canvas, so in practice these are always JPEG.
+   That is not a reason to trust them. Anything the Worker will later serve back
+   under its own origin has to be proven an image HERE — a file that is actually
+   HTML, served as HTML from the API origin, is script running with the API's
+   origin, and the session token lives there.
+
+   Detected type wins over anything the client claims the file is. */
+function sniffImage(bytes) {
+  if (bytes.length < 12) return null;
+  if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) return 'image/jpeg';
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47 &&
+      bytes[4] === 0x0D && bytes[5] === 0x0A && bytes[6] === 0x1A && bytes[7] === 0x0A) return 'image/png';
+  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+      bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) return 'image/webp';
+  return null;
+}
+
+/* base64 (with or without a data: prefix) to bytes. Returns null on anything
+   that is not decodable, rather than throwing into the generic 500 handler. */
+function decodeBase64Image(input) {
+  let s = String(input || '');
+  const comma = s.indexOf(',');
+  if (s.startsWith('data:') && comma > 0) s = s.slice(comma + 1);
+  s = s.replace(/\s+/g, '');
+  if (!s || !/^[A-Za-z0-9+/]+={0,2}$/.test(s)) return null;
+  let bin;
+  try { bin = atob(s); } catch (e) { return null; }
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
 /* Which thread is this request allowed to touch? Returns null if it may not. */
 function threadIdFor(user, requestedId) {
   const asked = String(requestedId || '').trim();
@@ -537,6 +576,21 @@ async function listMessages(user, url, env, request) {
     `SELECT id, sender, sender_name, body, created_at, read_at
        FROM messages WHERE student_id = ? ORDER BY created_at ASC LIMIT 500`
   ).bind(threadId).all();
+
+  /* Attachment METADATA only — never `data`. The bytes are fetched one at a
+     time from /api/attachment/<id>, so opening a thread with twenty
+     screenshots in it does not mean downloading twenty screenshots. */
+  const att = await env.DB.prepare(
+    `SELECT id, message_id, mime, bytes, width, height
+       FROM attachments WHERE student_id = ? ORDER BY created_at ASC LIMIT 500`
+  ).bind(threadId).all();
+  const byMessage = {};
+  (att.results || []).forEach((a) => {
+    (byMessage[a.message_id] = byMessage[a.message_id] || []).push({
+      id: a.id, mime: a.mime, bytes: a.bytes, width: a.width, height: a.height
+    });
+  });
+  (results || []).forEach((m) => { m.attachments = byMessage[m.id] || []; });
 
   /* Reading the thread marks the OTHER side's messages read. Doing it here
      rather than in a separate call means an unread badge cannot get stuck
@@ -557,7 +611,28 @@ async function sendMessage(user, request, env) {
   }
 
   const body = String(b.body || '').trim().slice(0, MAX_BODY);
-  if (!body) return json({ error: 'The message is empty.' }, 400, env, request);
+
+  /* Validate every image BEFORE writing anything. A message that half-sent —
+     text stored, picture rejected — is worse than one that did not send. */
+  const incoming = Array.isArray(b.images) ? b.images.slice(0, MAX_IMAGES_PER_MESSAGE) : [];
+  const images = [];
+  for (const img of incoming) {
+    const bytes = decodeBase64Image(img && img.data);
+    if (!bytes) return json({ error: 'That picture could not be read.' }, 400, env, request);
+    if (bytes.length > MAX_IMAGE_BYTES) {
+      return json({ error: 'That picture is too large. The limit is ' +
+        Math.round(MAX_IMAGE_BYTES / 1024) + ' KB after compression.' }, 413, env, request);
+    }
+    const mime = sniffImage(bytes);
+    if (!mime) return json({ error: 'Only JPEG, PNG and WebP pictures can be sent.' }, 415, env, request);
+    images.push({
+      bytes, mime,
+      width: Math.max(0, Math.min(20000, parseInt(img.width, 10) || 0)) || null,
+      height: Math.max(0, Math.min(20000, parseInt(img.height, 10) || 0)) || null
+    });
+  }
+
+  if (!body && !images.length) return json({ error: 'The message is empty.' }, 400, env, request);
 
   // An instructor writing to a student who does not exist is a typo, not a thread.
   const target = await env.DB.prepare('SELECT id FROM students WHERE id = ? AND active = 1')
@@ -580,8 +655,71 @@ async function sendMessage(user, request, env) {
   ).bind(id, threadId, user.role === 'instructor' ? 'instructor' : 'student',
          String(user.name || 'Unknown').slice(0, 80), body, now).run();
 
+  const saved = [];
+  for (const img of images) {
+    const aid = randomHex(8);
+    await env.DB.prepare(
+      `INSERT INTO attachments (id, message_id, student_id, mime, bytes, width, height, data, created_at)
+       VALUES (?,?,?,?,?,?,?,?,?)`
+    /* .buffer, NOT the Uint8Array view.
+
+       Binding the view stores the ARRAY'S TO-STRING — a 72-byte PNG came back
+       as the 152-character text "137,80,78,71,13,10,26,10,7,7,7,…". Every
+       picture would have been silently corrupted, with a successful-looking
+       upload and a broken image at the other end. Caught only by comparing the
+       bytes that came back against the bytes that went in, which is why that
+       check exists rather than a check that the request returned 200. */
+    ).bind(aid, id, threadId, img.mime, img.bytes.length, img.width, img.height, img.bytes.buffer, now).run();
+    saved.push({ id: aid, mime: img.mime, bytes: img.bytes.length, width: img.width, height: img.height });
+  }
+
   return json({ ok: true, message: { id, sender: user.role === 'instructor' ? 'instructor' : 'student',
-    sender_name: user.name, body, created_at: now, read_at: null } }, 200, env, request);
+    sender_name: user.name, body, created_at: now, read_at: null, attachments: saved } }, 200, env, request);
+}
+
+/* Serve one image.
+
+   NOT a public URL. There is no signed-link scheme and no unauthenticated
+   read: the caller presents their bearer token like any other API call, and
+   the same threadIdFor() rule decides whether they may have it. That is why
+   the front end fetches images with Auth.call and turns them into blob URLs
+   rather than putting the API path straight into an <img src>, which could not
+   carry the token.
+
+   The response headers matter as much as the access check. Content-Type comes
+   from the SNIFFED type, never from anything the uploader said; nosniff stops
+   a browser second-guessing it; the CSP makes the response inert even if some
+   future bug let a non-image through; and attachment disposition means a
+   browser that ignored all of the above would still download rather than
+   render it. */
+async function serveAttachment(user, id, env, request) {
+  const row = await env.DB.prepare(
+    'SELECT student_id, mime, data FROM attachments WHERE id = ?'
+  ).bind(String(id || '')).first();
+  if (!row) return json({ error: 'Not found.' }, 404, env, request);
+
+  const allowed = threadIdFor(user, row.student_id);
+  if (allowed !== row.student_id) return json({ error: 'Not yours.' }, 403, env, request);
+
+  const mime = ['image/jpeg', 'image/png', 'image/webp'].includes(row.mime) ? row.mime : 'application/octet-stream';
+
+  /* D1 hands a BLOB back as an ArrayBuffer, but has returned a plain number
+     array in some runtimes. Normalise rather than assume — passing an Array to
+     Response() would serialise it as text and ship a broken image. */
+  let data = row.data;
+  if (Array.isArray(data)) data = Uint8Array.from(data);
+
+  return new Response(data, {
+    status: 200,
+    headers: {
+      'Content-Type': mime,
+      'Content-Disposition': 'attachment',
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy': "default-src 'none'; sandbox",
+      'Cache-Control': 'private, max-age=86400',
+      ...corsHeaders(env, request)
+    }
+  });
 }
 
 /* How many messages are waiting for whoever is asking. Cheap enough to poll. */
@@ -672,6 +810,9 @@ export default {
       if (path === '/api/messages' && request.method === 'GET') return listMessages(user, url, env, request);
       if (path === '/api/messages' && request.method === 'POST') return sendMessage(user, request, env);
       if (path === '/api/messages/unread' && request.method === 'GET') return unreadCount(user, env, request);
+      if (path.startsWith('/api/attachment/') && request.method === 'GET') {
+        return serveAttachment(user, decodeURIComponent(path.slice('/api/attachment/'.length)), env, request);
+      }
 
       // Instructor-only from here.
       const admin = path === '/api/roster' || path.startsWith('/api/admin/');

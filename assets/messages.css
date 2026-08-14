@@ -134,3 +134,81 @@
   text-align: center;
   vertical-align: middle;
 }
+
+/* ---- attached pictures ---- */
+.msg-pics { display: grid; gap: .4rem; margin-top: .4rem; }
+
+/* Sized from the stored dimensions before the bytes arrive, so a thread does
+   not jump about as each picture loads in. */
+.msg-pic {
+  position: relative;
+  width: 100%;
+  max-width: 26rem;
+  height: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  overflow: hidden;
+}
+.msg-pic.ready { cursor: zoom-in; }
+.msg-pic img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.msg-pic-wait, .msg-pic.failed {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .78rem; color: var(--muted);
+  text-align: center; padding: .5rem;
+}
+.msg-pic.failed { height: auto; padding-bottom: 0 !important; min-height: 3rem; }
+
+.msg-lightbox {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  padding: 2rem;
+  background: rgba(0, 0, 0, .82);
+  cursor: zoom-out;
+}
+.msg-lightbox img {
+  max-width: 100%; max-height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .5);
+}
+
+/* ---- pictures queued in the composer ---- */
+.msg-pending { display: flex; flex-wrap: wrap; gap: .45rem; }
+.msg-thumb {
+  position: relative;
+  width: 5.5rem; height: 4rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg);
+}
+.msg-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.msg-thumb span {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: .05rem .2rem;
+  font-size: .62rem;
+  text-align: center;
+  color: #fff;
+  background: rgba(0, 0, 0, .55);
+}
+.msg-thumb-x {
+  position: absolute; top: .15rem; right: .15rem;
+  width: 1.15rem; height: 1.15rem;
+  border: 0; border-radius: 50%;
+  background: rgba(0, 0, 0, .65);
+  color: #fff;
+  font-size: .85rem; line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.msg-thumb-x:hover { background: var(--danger, #b23b3b); }
+
+.msg-attach { flex: 0 0 auto; cursor: pointer; padding: .3rem .7rem; font-size: .82rem; }
+.msg-compose.drop { outline: 2px dashed var(--accent); outline-offset: -4px; }

@@ -27,6 +27,12 @@
   var pollTimer = null;
   var lastUnread = null;
 
+  /* Attachments. The server's ceiling is 600 KB; aim well under it so a picture
+     never bounces after the student has waited for the upload. */
+  var MAX_IMAGES = 3;
+  var TARGET_BYTES = 420 * 1024;
+  var MAX_EDGE = 1600;      // a 4K screenshot is not more readable, only bigger
+
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -47,6 +53,130 @@
     var sameDay = d.toDateString() === now.toDateString();
     var time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     return sameDay ? time : d.toLocaleDateString([], { day: 'numeric', month: 'short' }) + ', ' + time;
+  }
+
+  /* ---------------------------------------------------------------------------
+     Pictures
+
+     COMPRESSED IN THE BROWSER, ALWAYS. A Windows screenshot is a 2–6 MB PNG,
+     and a phone photo of a screen is worse. Sending that raw would be slow on
+     the student's connection, would blow the server's ceiling, and would fill
+     a 5 GB database with pixels nobody needs — a chart is perfectly legible at
+     1600px and JPEG quality 0.8.
+
+     The re-encode has a second effect worth stating: whatever was in the file
+     goes in one side of a canvas and comes out the other as fresh JPEG bytes.
+     Metadata, appended payloads and anything hiding after the image data do not
+     survive. That is not why it is done and it is NOT relied on — the server
+     sniffs magic bytes on every upload regardless — but it is true.
+     --------------------------------------------------------------------------- */
+  function readImage(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('That file is not a picture I can read.')); };
+      img.src = url;
+    });
+  }
+
+  function toBlob(canvas, quality) {
+    return new Promise(function (resolve) {
+      canvas.toBlob(function (b) { resolve(b); }, 'image/jpeg', quality);
+    });
+  }
+
+  function blobToBase64(blob) {
+    return new Promise(function (resolve, reject) {
+      var fr = new FileReader();
+      fr.onload = function () {
+        var s = String(fr.result);
+        resolve(s.slice(s.indexOf(',') + 1));      // strip the data: prefix
+      };
+      fr.onerror = function () { reject(new Error('Could not read that picture.')); };
+      fr.readAsDataURL(blob);
+    });
+  }
+
+  async function compress(file) {
+    var img = await readImage(file);
+    var w = img.naturalWidth || img.width;
+    var h = img.naturalHeight || img.height;
+    if (!w || !h) throw new Error('That picture has no size I can read.');
+
+    var scale = Math.min(1, MAX_EDGE / Math.max(w, h));
+    var cw = Math.max(1, Math.round(w * scale));
+    var ch = Math.max(1, Math.round(h * scale));
+
+    var canvas = document.createElement('canvas');
+    canvas.width = cw; canvas.height = ch;
+    var ctx = canvas.getContext('2d');
+    /* Screenshots are usually pasted over nothing, and a transparent PNG would
+       otherwise flatten to black once it becomes a JPEG. */
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, cw, ch);
+    ctx.drawImage(img, 0, 0, cw, ch);
+
+    // Drop quality until it fits. Stop at 0.5 — below that a chart's gridlines go.
+    var quality = 0.85, blob = null;
+    for (var i = 0; i < 5; i++) {
+      blob = await toBlob(canvas, quality);
+      if (blob && blob.size <= TARGET_BYTES) break;
+      quality -= 0.12;
+      if (quality < 0.5) { quality = 0.5; }
+    }
+    if (!blob) throw new Error('That picture could not be prepared for sending.');
+    if (blob.size > TARGET_BYTES * 1.4) {
+      throw new Error('That picture is still too large after compressing. Try cropping it first.');
+    }
+    return { data: await blobToBase64(blob), width: cw, height: ch, size: blob.size,
+             preview: URL.createObjectURL(blob) };
+  }
+
+  /* Fetching an image needs the bearer token, which an <img src> cannot carry —
+     so the bytes come through the ordinary authenticated fetch and become a
+     blob URL. No signed links, no public object store, no second access model. */
+  async function attachmentUrl(id) {
+    var base = (window.API_BASE || '').replace(/\/+$/, '');
+    var token = null;
+    try { token = JSON.parse(localStorage.getItem('n1fx:token') || 'null'); } catch (e) {}
+    var res = await fetch(base + '/api/attachment/' + encodeURIComponent(id), {
+      headers: token ? { Authorization: 'Bearer ' + token } : {}
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return URL.createObjectURL(await res.blob());
+  }
+
+  /* Images render as placeholders and fill in as each one arrives, so a thread
+     with a dozen screenshots does not block on the first. */
+  function loadImagesIn(root) {
+    root.querySelectorAll('[data-att]').forEach(function (holder) {
+      if (holder.getAttribute('data-loaded')) return;
+      holder.setAttribute('data-loaded', '1');
+      attachmentUrl(holder.getAttribute('data-att')).then(function (url) {
+        var img = document.createElement('img');
+        img.src = url;
+        img.alt = 'Attached picture';
+        img.loading = 'lazy';
+        holder.innerHTML = '';
+        holder.appendChild(img);
+        holder.onclick = function () { openLightbox(url); };
+        holder.classList.add('ready');
+      }).catch(function () {
+        holder.textContent = 'This picture could not be loaded.';
+        holder.classList.add('failed');
+      });
+    });
+  }
+
+  function openLightbox(url) {
+    var box = document.createElement('div');
+    box.className = 'msg-lightbox';
+    box.innerHTML = '<img src="' + url + '" alt="Attached picture, full size">';
+    box.onclick = function () { box.remove(); document.removeEventListener('keydown', onKey); };
+    function onKey(e) { if (e.key === 'Escape') { box.remove(); document.removeEventListener('keydown', onKey); } }
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(box);
   }
 
   function instructorName() {
@@ -109,10 +239,20 @@
     }
     return messages.map(function (m) {
       var mine = meIsInstructor ? m.sender === 'instructor' : m.sender === 'student';
+      var pics = (m.attachments || []).map(function (a) {
+        /* The box is sized from the stored dimensions so the thread does not
+           jump about as each picture arrives. */
+        var ratio = (a.width && a.height) ? (a.height / a.width) : 0.6;
+        return '<div class="msg-pic" data-att="' + esc(a.id) + '" ' +
+          'style="padding-bottom:' + Math.min(140, Math.max(20, ratio * 100)).toFixed(1) + '%">' +
+          '<span class="msg-pic-wait">Loading picture…</span></div>';
+      }).join('');
+
       return '<div class="msg' + (mine ? ' mine' : '') + '">' +
         '<div class="msg-meta"><b>' + esc(m.sender_name || (m.sender === 'instructor' ? instructorName() : 'Student')) +
           '</b><span>' + esc(when(m.created_at)) + '</span></div>' +
-        '<div class="msg-body">' + bodyHtml(m.body) + '</div>' +
+        (m.body ? '<div class="msg-body">' + bodyHtml(m.body) + '</div>' : '') +
+        (pics ? '<div class="msg-pics">' + pics + '</div>' : '') +
       '</div>';
     }).join('');
   }
@@ -120,8 +260,12 @@
   function composerHtml(placeholder) {
     return '<form class="msg-compose" id="msgForm">' +
       '<textarea id="msgBody" rows="3" maxlength="4000" placeholder="' + esc(placeholder) + '"></textarea>' +
+      '<div class="msg-pending" id="msgPending" hidden></div>' +
       '<div class="msg-compose-foot">' +
-        '<span class="muted" id="msgStatus"></span>' +
+        '<label class="btn ghost msg-attach">Add a picture' +
+          '<input type="file" id="msgFile" accept="image/png,image/jpeg,image/webp" multiple hidden>' +
+        '</label>' +
+        '<span class="muted" id="msgStatus">Paste a screenshot straight in, or drop one here.</span>' +
         '<button class="btn primary" type="submit" id="msgSend">Send</button>' +
       '</div>' +
     '</form>';
@@ -133,17 +277,95 @@
     var box = root.querySelector('#msgBody');
     var btn = root.querySelector('#msgSend');
     var status = root.querySelector('#msgStatus');
+    var fileInput = root.querySelector('#msgFile');
+    var pendingBox = root.querySelector('#msgPending');
+    var pending = [];        // [{ data, width, height, size, preview }]
+
+    function paintPending() {
+      pendingBox.hidden = pending.length === 0;
+      pendingBox.innerHTML = pending.map(function (p, i) {
+        return '<div class="msg-thumb"><img src="' + p.preview + '" alt="">' +
+          '<button type="button" class="msg-thumb-x" data-i="' + i + '" ' +
+            'aria-label="Remove this picture">×</button>' +
+          '<span>' + Math.round(p.size / 1024) + ' KB</span></div>';
+      }).join('');
+      pendingBox.querySelectorAll('[data-i]').forEach(function (b) {
+        b.onclick = function () {
+          var i = parseInt(b.getAttribute('data-i'), 10);
+          URL.revokeObjectURL(pending[i].preview);
+          pending.splice(i, 1);
+          paintPending();
+        };
+      });
+    }
+
+    async function addFiles(files) {
+      var list = [].slice.call(files || []).filter(function (f) {
+        return f && /^image\//.test(f.type);
+      });
+      if (!list.length) return;
+      for (var i = 0; i < list.length; i++) {
+        if (pending.length >= MAX_IMAGES) {
+          status.textContent = 'Up to ' + MAX_IMAGES + ' pictures per message.';
+          break;
+        }
+        status.textContent = 'Preparing picture…';
+        try {
+          pending.push(await compress(list[i]));
+          status.textContent = '';
+        } catch (err) {
+          status.textContent = (err && err.message) || 'That picture could not be added.';
+        }
+      }
+      paintPending();
+    }
+
+    fileInput.onchange = function () { addFiles(fileInput.files); fileInput.value = ''; };
+
+    /* PASTE IS THE IMPORTANT ONE. Snipping Tool, PrtScn, macOS shift-cmd-4 and
+       every trading platform's "copy chart" all put an image on the clipboard.
+       Making the student save a file first and then find it is the difference
+       between a feature people use and one they do not. */
+    box.addEventListener('paste', function (e) {
+      var items = (e.clipboardData && e.clipboardData.items) || [];
+      var files = [];
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].kind === 'file' && /^image\//.test(items[i].type)) {
+          var f = items[i].getAsFile();
+          if (f) files.push(f);
+        }
+      }
+      if (files.length) { e.preventDefault(); addFiles(files); }
+    });
+
+    ['dragenter', 'dragover'].forEach(function (ev) {
+      form.addEventListener(ev, function (e) { e.preventDefault(); form.classList.add('drop'); });
+    });
+    ['dragleave', 'drop'].forEach(function (ev) {
+      form.addEventListener(ev, function (e) { e.preventDefault(); form.classList.remove('drop'); });
+    });
+    form.addEventListener('drop', function (e) {
+      if (e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files);
+    });
 
     form.onsubmit = async function (e) {
       e.preventDefault();
       var body = (box.value || '').trim();
-      if (!body) { status.textContent = 'Nothing to send.'; return; }
-      btn.disabled = true; status.textContent = 'Sending…';
+      if (!body && !pending.length) { status.textContent = 'Nothing to send.'; return; }
+      btn.disabled = true; status.textContent = pending.length ? 'Sending picture…' : 'Sending…';
       try {
         var payload = { body: body };
         if (studentId) payload.studentId = studentId;
+        if (pending.length) {
+          payload.images = pending.map(function (p) {
+            return { data: p.data, width: p.width, height: p.height };
+          });
+        }
         await Auth.call('/api/messages', { method: 'POST', body: payload });
         box.value = '';
+        pending.forEach(function (p) { URL.revokeObjectURL(p.preview); });
+        pending = [];
+        paintPending();
         status.textContent = '';
         await onSent();
       } catch (err) {
@@ -173,7 +395,8 @@
       '<div class="crumb"><a href="#/">Modules</a> / Messages</div>' +
       '<div class="module-head"><h1>Messages</h1>' +
       '<p class="lede">A direct line to ' + esc(instructorName()) + '. Ask about anything you are stuck ' +
-      'on — a lab, a locked step, your demo period. Replies appear here.</p></div>' +
+      'on — a lab, a locked step, your demo period. <b>Send a screenshot of your chart</b> by pasting ' +
+      'it straight into the box. Replies appear here.</p></div>' +
       '<div class="msg-panel"><div class="msg-thread" id="msgThread">' +
         '<p class="muted">Loading…</p>' +
       '</div>' + composerHtml('Type your message to ' + instructorName() + '…') + '</div>';
@@ -182,6 +405,7 @@
       try {
         var r = await Auth.call('/api/messages');
         app.querySelector('#msgThread').innerHTML = threadHtml(r.messages || [], false);
+        loadImagesIn(app);
       } catch (e) {
         app.querySelector('#msgThread').innerHTML =
           '<p class="muted">Could not load your messages. ' + esc((e && e.message) || '') + '</p>';
@@ -224,7 +448,7 @@
       app.querySelector('#msgList').innerHTML = threads.map(function (t) {
         var preview = t.last_body
           ? (t.last_sender === 'instructor' ? 'You: ' : '') + String(t.last_body).slice(0, 60)
-          : 'No messages yet';
+          : (t.last_at ? (t.last_sender === 'instructor' ? 'You: ' : '') + 'Picture' : 'No messages yet');
         return '<button class="msg-item' + (t.id === openId ? ' on' : '') + '" data-sid="' + esc(t.id) + '">' +
           '<span class="msg-item-top"><b>' + esc(t.name) + '</b>' +
             (t.unread > 0 ? '<span class="msg-count">' + t.unread + '</span>' : '') + '</span>' +
@@ -251,6 +475,7 @@
         try {
           var r = await Auth.call('/api/messages?studentId=' + encodeURIComponent(sid));
           panel.querySelector('#msgThread').innerHTML = threadHtml(r.messages || [], true);
+          loadImagesIn(panel);
         } catch (e) {
           panel.querySelector('#msgThread').innerHTML =
             '<p class="muted">Could not load. ' + esc((e && e.message) || '') + '</p>';

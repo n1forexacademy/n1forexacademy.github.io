@@ -1,0 +1,2 @@
+INSERT OR REPLACE INTO students (id,name,role,code_hash,code_salt,active,created_at,username) VALUES ('atttest','Attach Test','student','x','x',1,1786750042635,'atttest');
+INSERT OR REPLACE INTO sessions (token_hash,student_id,display_name,created_at,expires_at) VALUES ('1a983cc18f21a70a20db16b11b0e91b0069a7a5cec703241a4787076c75cd561','atttest','Attach Test',1786750042635,1786753642635);
