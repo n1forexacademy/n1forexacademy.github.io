@@ -131,5 +131,20 @@ window.CATALOG = [
     level: "Digital Assets", duration: "85 min", slides: 6, quiz: 5 },
   { id: 505, track: "crypto", title: "Risk in an Unregulated Market, and Closing the Course",
     tagline: "The last module of six tracks. One policy, extended a fifth time — and an honest answer about what all of this was for.",
-    level: "Digital Assets", duration: "95 min", slides: 6, quiz: 5 }
+    level: "Digital Assets", duration: "95 min", slides: 6, quiz: 5 },
+  { id: 601, track: "commodities", title: "What a Commodity Actually Is",
+    tagline: "The only thing in this course that has to be dug up, grown, shipped and stored — and every one of those verbs costs money.",
+    level: "Physical Markets", duration: "75 min", slides: 5, quiz: 5 },
+  { id: 602, track: "commodities", title: "Inventory, Weather and What Actually Moves It",
+    tagline: "Boring published numbers beat compelling stories in this market more reliably than in any other you have studied.",
+    level: "Physical Markets", duration: "80 min", slides: 6, quiz: 5 },
+  { id: 603, track: "commodities", title: "Three Families, Not One Asset Class",
+    tagline: "Energy, metals and agriculture share a shelf and almost nothing else. Treating them as one thing produces confident nonsense.",
+    level: "Physical Markets", duration: "80 min", slides: 6, quiz: 5 },
+  { id: 604, track: "commodities", title: "Four Ways In, Each With a Cost",
+    tagline: "You have decided a commodity is going up. Now choose how — because every route charges you differently and one of them is not really the commodity at all.",
+    level: "Physical Markets", duration: "85 min", slides: 6, quiz: 5 },
+  { id: 605, track: "commodities", title: "Risk and Building a Commodities Approach",
+    tagline: "The sixth extension of one risk policy, and an honest answer about how narrow a place this market should have.",
+    level: "Physical Markets", duration: "85 min", slides: 5, quiz: 5 }
 ];

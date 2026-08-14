@@ -278,8 +278,59 @@ window.TRACKS = [
       {
         id: 'cr-certificate',
         title: 'Certificate',
-        blurb: 'The final certificate. Six markets, one process.',
+        blurb: 'Certificate in Digital Asset Markets.',
         steps: [{ id: 'cert-crypto', type: 'cert', title: 'Certificate in Digital Asset Markets' }]
+      }
+    ]
+  },
+  {
+    id: 'commodities',
+    title: 'Commodities',
+    subtitle: 'Things that must be dug up, grown, shipped and stored',
+    blurb: 'The only market in this course where the thing you trade physically exists — so storage, grades, harvests and pipelines sit inside the price rather than beside it. Builds directly on the futures track.',
+    requires: 'crypto',
+    certificateTitle: 'Certificate in Commodity Markets',
+    stages: [
+      {
+        id: 'cm-instrument',
+        title: 'The physical thing',
+        blurb: 'Grade, place and window are all price — and a commodity generates nothing while carry runs against you.',
+        steps: [
+          { id: 'm601', type: 'module', ref: 601, pass: 80 },
+          { id: 'm602', type: 'module', ref: 602, pass: 80 },
+          { id: 'd-cm-balance', type: 'drill', ref: 'cm-balance' }
+        ]
+      },
+      {
+        id: 'cm-families',
+        title: 'Families and routes',
+        blurb: 'Energy, metals and agriculture behave differently — and there are four ways in, each charging you differently.',
+        steps: [
+          { id: 'm603', type: 'module', ref: 603, pass: 80 },
+          { id: 'm604', type: 'module', ref: 604, pass: 80 },
+          { id: 'd-cm-route', type: 'drill', ref: 'cm-route' }
+        ]
+      },
+      {
+        id: 'cm-process',
+        title: 'Risk and process',
+        blurb: 'Burst volatility, the carry hurdle, and an honest answer about how narrow a place this deserves.',
+        steps: [
+          { id: 'm605', type: 'module', ref: 605, pass: 85 },
+          { id: 'd-cm-carry', type: 'drill', ref: 'cm-carry' },
+          { id: 'g-commodities-plan', type: 'gate', title: 'Submit your commodities plan',
+            detail: 'The addendum from Lab 605. Your instructor checks that the carry hurdle is a computed ' +
+                    'percentage rather than an acknowledgement that carry exists, that the thesis names a specific ' +
+                    'published figure that would falsify it, that family limits are set separately from the total ' +
+                    'cap, and that the event stress uses a move at least as large as the last real shock. ' +
+                    'Concluding that commodities have a narrow role or none is a pass.' }
+        ]
+      },
+      {
+        id: 'cm-certificate',
+        title: 'Certificate',
+        blurb: 'Recognition that you completed the commodities programme.',
+        steps: [{ id: 'cert-commodities', type: 'cert', title: 'Certificate in Commodity Markets' }]
       }
     ]
   }
