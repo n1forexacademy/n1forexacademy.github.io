@@ -504,6 +504,121 @@ async function handleEnroll(request, env) {
   return json({ ok: true, id, name, username, role }, 200, env, request);
 }
 
+/* ---------- messages ----------
+
+   One thread per student, the instructor at the other end of all of them. See
+   the header of migrations/004_messages.sql for why there is no recipient
+   column.
+
+   THE ACCESS RULE, STATED ONCE: a student may read and write rows where
+   student_id equals their own id. An instructor may read and write any. It is
+   enforced here, in threadIdFor(), and nowhere else — every handler below goes
+   through it, so there is one place to check rather than four. The UI never
+   gets a say; hiding a button is not access control. */
+
+const MAX_BODY = 4000;
+const MAX_PER_DAY = 60;      // a civil ceiling, not a real rate limiter
+
+/* Which thread is this request allowed to touch? Returns null if it may not. */
+function threadIdFor(user, requestedId) {
+  const asked = String(requestedId || '').trim();
+  if (user.role === 'instructor') return asked || null;   // instructor must name a student
+  if (!asked || asked === user.id) return user.id;        // a student gets their own, always
+  return null;
+}
+
+async function listMessages(user, url, env, request) {
+  const threadId = threadIdFor(user, url.searchParams.get('studentId'));
+  if (!threadId) {
+    return json({ error: 'Which conversation?' }, user.role === 'instructor' ? 400 : 403, env, request);
+  }
+
+  const { results } = await env.DB.prepare(
+    `SELECT id, sender, sender_name, body, created_at, read_at
+       FROM messages WHERE student_id = ? ORDER BY created_at ASC LIMIT 500`
+  ).bind(threadId).all();
+
+  /* Reading the thread marks the OTHER side's messages read. Doing it here
+     rather than in a separate call means an unread badge cannot get stuck
+     showing a message the person has plainly already seen. */
+  const theirs = user.role === 'instructor' ? 'student' : 'instructor';
+  await env.DB.prepare(
+    `UPDATE messages SET read_at = ? WHERE student_id = ? AND sender = ? AND read_at IS NULL`
+  ).bind(Date.now(), threadId, theirs).run();
+
+  return json({ messages: results || [], studentId: threadId }, 200, env, request);
+}
+
+async function sendMessage(user, request, env) {
+  const b = await request.json().catch(() => ({}));
+  const threadId = threadIdFor(user, b.studentId);
+  if (!threadId) {
+    return json({ error: 'Which conversation?' }, user.role === 'instructor' ? 400 : 403, env, request);
+  }
+
+  const body = String(b.body || '').trim().slice(0, MAX_BODY);
+  if (!body) return json({ error: 'The message is empty.' }, 400, env, request);
+
+  // An instructor writing to a student who does not exist is a typo, not a thread.
+  const target = await env.DB.prepare('SELECT id FROM students WHERE id = ? AND active = 1')
+    .bind(threadId).first();
+  if (!target) return json({ error: 'No such student.' }, 404, env, request);
+
+  const since = Date.now() - 86400000;
+  const recent = await env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM messages WHERE student_id = ? AND sender = ? AND created_at > ?`
+  ).bind(threadId, user.role === 'instructor' ? 'instructor' : 'student', since).first();
+  if (recent && recent.n >= MAX_PER_DAY) {
+    return json({ error: 'That is a lot of messages in one day. Try again tomorrow.' }, 429, env, request);
+  }
+
+  const id = randomHex(8);
+  const now = Date.now();
+  await env.DB.prepare(
+    `INSERT INTO messages (id, student_id, sender, sender_name, body, created_at, read_at)
+     VALUES (?,?,?,?,?,?,NULL)`
+  ).bind(id, threadId, user.role === 'instructor' ? 'instructor' : 'student',
+         String(user.name || 'Unknown').slice(0, 80), body, now).run();
+
+  return json({ ok: true, message: { id, sender: user.role === 'instructor' ? 'instructor' : 'student',
+    sender_name: user.name, body, created_at: now, read_at: null } }, 200, env, request);
+}
+
+/* How many messages are waiting for whoever is asking. Cheap enough to poll. */
+async function unreadCount(user, env, request) {
+  if (user.role === 'instructor') {
+    const { results } = await env.DB.prepare(
+      `SELECT student_id, COUNT(*) AS n FROM messages
+        WHERE sender = 'student' AND read_at IS NULL GROUP BY student_id`
+    ).all();
+    const byStudent = {};
+    let total = 0;
+    (results || []).forEach((r) => { byStudent[r.student_id] = r.n; total += r.n; });
+    return json({ unread: total, byStudent }, 200, env, request);
+  }
+  const row = await env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM messages
+      WHERE student_id = ? AND sender = 'instructor' AND read_at IS NULL`
+  ).bind(user.id).first();
+  return json({ unread: (row && row.n) || 0 }, 200, env, request);
+}
+
+/* Instructor's list of conversations: last message and unread count per student,
+   including students who have never written, so starting one is one click. */
+async function listThreads(env, request) {
+  const { results } = await env.DB.prepare(
+    `SELECT st.id, st.name, st.username,
+            (SELECT body       FROM messages m WHERE m.student_id = st.id ORDER BY m.created_at DESC LIMIT 1) AS last_body,
+            (SELECT sender     FROM messages m WHERE m.student_id = st.id ORDER BY m.created_at DESC LIMIT 1) AS last_sender,
+            (SELECT created_at FROM messages m WHERE m.student_id = st.id ORDER BY m.created_at DESC LIMIT 1) AS last_at,
+            (SELECT COUNT(*)   FROM messages m WHERE m.student_id = st.id AND m.sender = 'student' AND m.read_at IS NULL) AS unread
+       FROM students st
+      WHERE st.role != 'instructor' AND st.active = 1
+      ORDER BY unread DESC, last_at DESC, st.name`
+  ).all();
+  return json({ threads: results || [] }, 200, env, request);
+}
+
 /* ---------- entry ---------- */
 
 export default {
@@ -551,6 +666,13 @@ export default {
         return json({ progress: next }, 200, env, request);
       }
 
+      /* Messaging. Deliberately ABOVE the instructor-only gate: both sides use
+         the same three routes, and who may see which thread is decided by
+         threadIdFor(), not by which side of a gate the route sits on. */
+      if (path === '/api/messages' && request.method === 'GET') return listMessages(user, url, env, request);
+      if (path === '/api/messages' && request.method === 'POST') return sendMessage(user, request, env);
+      if (path === '/api/messages/unread' && request.method === 'GET') return unreadCount(user, env, request);
+
       // Instructor-only from here.
       const admin = path === '/api/roster' || path.startsWith('/api/admin/');
       if (admin && user.role !== 'instructor') {
@@ -577,6 +699,7 @@ export default {
       if (path === '/api/admin/invites' && request.method === 'GET') return listInvites(env, request);
       if (path === '/api/admin/invites' && request.method === 'POST') return createInvite(user, request, env);
       if (path === '/api/admin/invites/revoke' && request.method === 'POST') return revokeInvite(request, env);
+      if (path === '/api/admin/threads' && request.method === 'GET') return listThreads(env, request);
 
       return json({ error: 'Not found.' }, 404, env, request);
     } catch (err) {

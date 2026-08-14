@@ -110,7 +110,9 @@
       quickLinks();
 
     body.querySelectorAll('[data-open]').forEach(function (b) {
-      b.onclick = function () { location.hash = '#/instructor'; };
+      // Was '#/instructor', which showed the admin page and not this student.
+      // A conversation is what you want when someone is stuck or stalled.
+      b.onclick = function () { location.hash = '#/messages/' + b.getAttribute('data-open'); };
     });
     wireInvite(body);
   }

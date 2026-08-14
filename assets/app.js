@@ -246,7 +246,9 @@
                esc(st.current.requirement) + '</p></div>' +
                (cur.href ? '<p><a class="btn primary" href="' + cur.href + '" style="display:inline-block;text-decoration:none">Go there →</a></p>' : '')
              : '') +
-        '<p class="muted">Genuinely stuck on the step before this? Ask your instructor — they can work through it ' +
+        '<p class="muted">Genuinely stuck on the step before this? ' +
+        '<a href="#/messages">Message ' + esc((window.BRAND && BRAND.signatory && BRAND.signatory.name) || 'your instructor') + '</a>' +
+        ' — they can work through it ' +
         'with you and unlock it manually if that is the right call.</p>' +
       '</div>';
   }
@@ -721,10 +723,12 @@
     var nav = document.querySelector('.topnav');
     if (nav) {
       nav.innerHTML = Auth.isInstructor()
-        ? '<a href="#/">Dashboard</a><a href="#/instructor">Admin</a><a href="#/library">Library</a>' +
+        ? '<a href="#/">Dashboard</a><a href="#/instructor">Admin</a>' +
+          '<a href="#/messages" data-msg-link>Messages</a><a href="#/library">Library</a>' +
           '<a href="#/drills">Trading Floor</a><a href="#/calculators">Calculators</a>' +
           '<a href="#/toolkit">Toolkit</a><a href="#/glossary">Glossary</a>'
-        : '<a href="#/">My path</a><a href="#/drills">Trading Floor</a>' +
+        : '<a href="#/">My path</a><a href="#/messages" data-msg-link>Messages</a>' +
+          '<a href="#/drills">Trading Floor</a>' +
           '<a href="#/calculators">Calculators</a><a href="#/glossary">Glossary</a>';
     }
     var chip = document.getElementById('userchip');
@@ -734,6 +738,9 @@
       (s.role === 'instructor' ? '<a href="#/instructor">Instructor</a>' : '') +
       '<button id="signout">Sign out</button>';
     chip.querySelector('#signout').onclick = function () { Auth.signOut(); };
+
+    // The nav is rebuilt on every render, which discards the badge with it.
+    if (window.Messages) Messages.startPolling();
   }
 
   /* ---------- router ---------- */
@@ -799,6 +806,7 @@
     else if (parts[0] === 'calculators') Tools.render(app);
     else if (parts[0] === 'toolkit') viewToolkit();
     else if (parts[0] === 'glossary') viewGlossary();
+    else if (parts[0] === 'messages') Messages.render(app, parts[1] || null);
     else if (parts[0] === 'instructor') {
       if (Auth.isInstructor()) Auth.renderInstructor(app);
       else app.innerHTML = '<div class="panel"><h2>Instructor only</h2>' +

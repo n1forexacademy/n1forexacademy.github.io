@@ -18,7 +18,7 @@
 
   /* Bumped by tools/bump-assets.mjs so a deploy invalidates cached module
      files. Without it a returning student keeps the old lesson text. */
-  var ASSET_V = '30';
+  var ASSET_V = '31';
 
   var loaded = {};        // moduleId -> true
   var inFlight = {};      // moduleId -> Promise
