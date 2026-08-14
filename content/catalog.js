@@ -116,5 +116,20 @@ window.CATALOG = [
     level: "Derivatives", duration: "80 min", slides: 6, quiz: 5 },
   { id: 406, track: "options", title: "Structures, Assignment and Building an Options Approach",
     tagline: "A handful of structures worth knowing, the obligation that can arrive uninvited, and an honest answer about whether this belongs in your account.",
-    level: "Derivatives", duration: "95 min", slides: 6, quiz: 5 }
+    level: "Derivatives", duration: "95 min", slides: 6, quiz: 5 },
+  { id: 501, track: "crypto", title: "What a Crypto Asset Actually Is",
+    tagline: "A ledger, a token, and a question worth answering before anything else: what exactly would you own?",
+    level: "Digital Assets", duration: "80 min", slides: 6, quiz: 5 },
+  { id: 502, track: "crypto", title: "Custody, Exchanges and How People Actually Lose Everything",
+    tagline: "More retail money has been lost here to custody failures and irreversible mistakes than to being wrong about the price.",
+    level: "Digital Assets", duration: "85 min", slides: 6, quiz: 5 },
+  { id: 503, track: "crypto", title: "What Actually Moves the Price",
+    tagline: "Thin books, reflexive flows and a market that trades every hour of every day — including the ones where nobody is watching.",
+    level: "Digital Assets", duration: "80 min", slides: 6, quiz: 5 },
+  { id: 504, track: "crypto", title: "Perpetuals, Funding and Liquidation",
+    tagline: "A futures contract that never expires, a fee that keeps it tethered, and an automatic closure that does not wait for you.",
+    level: "Digital Assets", duration: "85 min", slides: 6, quiz: 5 },
+  { id: 505, track: "crypto", title: "Risk in an Unregulated Market, and Closing the Course",
+    tagline: "The last module of six tracks. One policy, extended a fifth time — and an honest answer about what all of this was for.",
+    level: "Digital Assets", duration: "95 min", slides: 6, quiz: 5 }
 ];

@@ -227,5 +227,57 @@ window.TRACKS = [
         steps: [{ id: 'cert-options', type: 'cert', title: 'Certificate in Options Markets' }]
       }
     ]
+  },
+  {
+    id: 'crypto',
+    title: 'Crypto & Digital Assets',
+    subtitle: 'Where every earlier risk lesson matters most',
+    blurb: 'Deliberately last. Technically the simplest of the six to start trading, and the one where custody, leverage and correlation can end you fastest — so it is taught with every lesson from the five tracks behind it already in hand.',
+    requires: 'options',
+    certificateTitle: 'Certificate in Digital Asset Markets',
+    stages: [
+      {
+        id: 'cr-instrument',
+        title: 'The asset and the keys',
+        blurb: 'What you would actually own, and the custody failures that have cost retail holders more than price ever has.',
+        steps: [
+          { id: 'm501', type: 'module', ref: 501, pass: 80 },
+          { id: 'd-cr-supply', type: 'drill', ref: 'cr-supply' },
+          { id: 'm502', type: 'module', ref: 502, pass: 85 },
+          { id: 'd-cr-custody', type: 'drill', ref: 'cr-custody' }
+        ]
+      },
+      {
+        id: 'cr-market',
+        title: 'The market and the leverage',
+        blurb: 'Thin books, liquidation cascades, and the perpetual contract where most leveraged trading actually happens.',
+        steps: [
+          { id: 'm503', type: 'module', ref: 503, pass: 80 },
+          { id: 'm504', type: 'module', ref: 504, pass: 85 },
+          { id: 'd-cr-liq', type: 'drill', ref: 'cr-liq' }
+        ]
+      },
+      {
+        id: 'cr-close',
+        title: 'Risk and closing the course',
+        blurb: 'The final extension of your risk policy, and an honest account of what six tracks did and did not equip you to do.',
+        steps: [
+          { id: 'm505', type: 'module', ref: 505, pass: 85 },
+          { id: 'g-final-plan', type: 'gate', title: 'Submit your complete cross-market plan',
+            detail: 'The capstone from Lab 505, and the final gate of the course. Your instructor checks that the crypto ' +
+                    'section states a total exposure cap and a per-venue cap as specific numbers, that maximum leverage ' +
+                    'is derived from liquidation distance against daily range rather than from platform limits, that ' +
+                    'both stress tests are computed against real capital, and that the six-market statement assigns at ' +
+                    'least one market a limited role or none. It must read as ONE policy covering six markets, not six ' +
+                    'separate documents.' }
+        ]
+      },
+      {
+        id: 'cr-certificate',
+        title: 'Certificate',
+        blurb: 'The final certificate. Six markets, one process.',
+        steps: [{ id: 'cert-crypto', type: 'cert', title: 'Certificate in Digital Asset Markets' }]
+      }
+    ]
   }
 ];
