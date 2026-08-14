@@ -13,22 +13,29 @@ simulator works, how to add content, what the access gate is and is not, and how
 A static teaching site. **No build step, no framework, no package.json, no dependencies.**
 Plain HTML/CSS/JS loaded with `<script>` tags. Open `index.html` through any web server and it runs.
 
-Three tracks, unlocked in sequence, each ending in its own certificate:
+Six tracks, unlocked in sequence, each ending in its own certificate:
 
-| Track | Modules | Unlocks after |
-|---|---|---|
-| Forex | 12 (ids 1–12) | — |
-| Equities & Shares | 8 (ids 101–108) | Forex certificate |
-| Bonds & Fixed Income | 6 (ids 201–206) | Equities certificate |
+| Track | Modules | Lessons | Practical | Unlocks after |
+|---|---|---|---|---|
+| Forex | 12 (ids 1–12) | 48 | 7 simulator drills | — |
+| Equities & Shares | 8 (ids 101–108) | 24 | 4 labs | Forex certificate |
+| Bonds & Fixed Income | 6 (ids 201–206) | 12 | 3 labs | Equities certificate |
+| Futures | 5 (ids 301–305) | 10 | 3 labs | Bonds certificate |
+| Options | 6 (ids 401–406) | 12 | 4 labs | Futures certificate |
+| Crypto & Digital Assets | 5 (ids 501–505) | 10 | 3 labs | Options certificate |
+
+**42 modules, 116 lessons, 24 practical pieces.** Tracks unlock in a strict chain; each ends in its
+own certificate. The order is pedagogical, not alphabetical — futures builds on forex margin and
+equity exchange mechanics, options is the hardest instrument and assumes all of it, and crypto is
+last because it is the easiest of the six to start trading and the fastest to end you.
 
 Each module is delivered lesson-by-lesson: read a short lesson, pass a two-question check on it,
 then the next opens. The module test unlocks only when every lesson is passed.
 
-Plus a **Trading Floor** — a simulated market with a full account model, a risk guard that steps
-down from enforcing to advisory to off, and 7 assessed drills.
-
-The equities and bonds tracks add 7 **analysis labs** — worked exercises over supplied data, because
-those tracks turn on judgement rather than execution and the simulator has no shares or bonds. See §5.
+Plus a **Trading Floor** carrying all the practical work. 7 assessed drills run on the simulator,
+which is forex-only; the other five tracks use 17 **analysis labs** — worked exercises over supplied
+data, because those tracks turn on judgement rather than execution and the simulator has no shares,
+bonds, contracts, options or tokens. See §5.
 
 ---
 
@@ -84,32 +91,35 @@ tools/
 
 content/
   roster.js             API_BASE switch + local-mode access codes. EDIT THIS.
-  catalog.js            GENERATED. Metadata for all 26 modules — see §2.1.
-  tracks.js             The three tracks and their stages. Eager, small.
+  catalog.js            GENERATED. Metadata for all 42 modules — see §2.1.
+  tracks.js             The six tracks and their stages. Eager, small.
   path.js               The forex track's stages + demo-period thresholds.
-  modules/mN.js         One file per module. Lazy. 1–12 forex, 101–108
-                        equities, 201–206 bonds.
+  modules/mN.js         One file per module. Lazy. 1–12 forex, 101–108 equities,
+                        201–206 bonds, 301–305 futures, 401–406 options,
+                        501–505 crypto.
   lessons/lN.js         One file per module's lessons. Lazy.
   drills.js             The 7 assessed simulator drills (forex only).
-  labs.js               The 7 analysis labs for equities and bonds. Worked
-                        exercises, not simulator sessions — see §5 and
-                        assets/labs.js for why.
+  labs-futures.js       3 analysis labs for the futures track.
+  labs-options.js       4 analysis labs for the options track.
+  labs-crypto.js        3 analysis labs for the crypto track.
+  labs.js               7 analysis labs for equities and bonds. Worked exercises,
+                        not simulator sessions — see §5 and assets/labs.js for why.
   illustrations.js      Annotated drawings of the academy's own terminal.
   brand.js              Logo, seal, signature, signatory details.
 ```
 
 ### 2.1 Lazy loading and the catalogue
 
-Loading all 26 modules eagerly meant a 607 KB download before anything rendered.
-Content is now fetched **per module, on demand** — the initial payload is 52 KB.
+Loading every module eagerly meant a 607 KB download before anything rendered, and the course has
+since grown to 42 modules. Content is fetched **per module, on demand**.
 
 The piece that makes this work is **`content/catalog.js`**: id, title, tagline,
-level, duration and counts for every module, 6.8 KB total. The journey, library
+level, duration and counts for every module, ~11 KB total. The journey, library
 listings and route guards all render from it, so navigating the path fetches
 nothing. Only opening a module pulls its slides, lab, quiz and lessons.
 
 ```
-EAGER   catalog.js · tracks.js · path.js · drills.js · labs.js · roster.js
+EAGER   catalog.js · tracks.js · path.js · drills.js · labs*.js · roster.js
         illustrations.js · brand.js                          ~52 KB
 LAZY    content/modules/mN.js + content/lessons/lN.js    ~21 KB each
 ```
@@ -265,7 +275,8 @@ node tools/build-catalog.mjs
 ```
 
 The loader finds `content/modules/mN.js` and `content/lessons/lN.js` by id — there is no manifest
-to update. Module ids: 1–12 forex, 101–108 equities, 201–206 bonds.
+to update. Module ids: 1–12 forex, 101–108 equities, 201–206 bonds, 301–305 futures,
+401–406 options, 501–505 crypto. Set `track:` on the module to match.
 
 ```js
 {
