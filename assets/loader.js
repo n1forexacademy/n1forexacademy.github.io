@@ -18,7 +18,7 @@
 
   /* Bumped by tools/bump-assets.mjs so a deploy invalidates cached module
      files. Without it a returning student keeps the old lesson text. */
-  var ASSET_V = '27';
+  var ASSET_V = '28';
 
   var loaded = {};        // moduleId -> true
   var inFlight = {};      // moduleId -> Promise
@@ -114,6 +114,9 @@
   }
 
   window.Content = {
+    /* The code lab starts a Worker by URL, which bypasses index.html and so
+       bypasses the bump tool's stamping. It reads the version from here. */
+    ASSET_V: ASSET_V,
     loadModule: loadModule,
     loadModules: loadModules,
     loadTrack: loadTrack,

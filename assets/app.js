@@ -553,14 +553,16 @@
     function card(d) {
       var passed = prog.drills && prog.drills[d.id] && prog.drills[d.id].passed;
       return '<a class="card drill-card' + (passed ? ' done' : '') + '" href="#/drill/' + d.id + '">' +
-        '<span class="num">' + (OptSim.isSim(d) ? 'Options lab' : Labs.isLab(d) ? 'Lab' : 'Drill') + ' ' +
+        '<span class="num">' + (EALab.isCode(d) ? 'Code lab' : OptSim.isSim(d) ? 'Options lab' : Labs.isLab(d) ? 'Lab' : 'Drill') + ' ' +
           (passed ? '· <span class="tick">passed ✓</span>' : '· Module ' + d.module) + '</span>' +
         '<h3>' + esc(d.title) + '</h3>' +
         '<p>' + esc(d.brief) + '</p>' +
         '<div class="chips">' +
           // Analysis labs have no instrument and no risk policy — they are
           // worked exercises, not simulator sessions. See assets/labs.js.
-          (OptSim.isSim(d)
+          (EALab.isCode(d)
+            ? '<span class="chip">Write and run code</span><span class="chip">Marked on behaviour</span>'
+            : OptSim.isSim(d)
             ? '<span class="chip">Live option chain</span><span class="chip">Decay &amp; volatility</span>'
             : Labs.isLab(d)
             ? '<span class="chip">Worked exercise</span><span class="chip">No simulator</span>'
@@ -571,16 +573,18 @@
         '</div></a>';
     }
 
-    var sim  = drills.filter(function (d) { return !Labs.isLab(d) && !OptSim.isSim(d); });
+    var sim  = drills.filter(function (d) { return !Labs.isLab(d) && !OptSim.isSim(d) && !EALab.isCode(d); });
     var opts = drills.filter(function (d) { return OptSim.isSim(d); });
     var labs = drills.filter(function (d) { return Labs.isLab(d); });
+    var code = drills.filter(function (d) { return EALab.isCode(d); });
 
     app.innerHTML =
       '<div class="crumb"><a href="#/">Modules</a> / Trading Floor</div>' +
       '<div class="module-head"><h1>Trading Floor</h1>' +
       '<p class="lede">Every practical piece of the course, in one place. ' + sim.length + ' assessed drills run on the ' +
-      'market simulator, ' + opts.length + ' on a live option chain, and ' + labs.length + ' are worked labs for the ' +
-      'tracks where the decisions are analytical rather than a session at the order button.</p>' +
+      'market simulator, ' + opts.length + ' on a live option chain, ' + labs.length + ' are worked labs for the ' +
+      'tracks where the decisions are analytical rather than a session at the order button, and ' + code.length + ' are ' +
+      'code labs where you write an EA and watch the machine do exactly what you told it.</p>' +
       '<div class="chips"><span class="chip">' + done + ' of ' + drills.length + ' passed</span></div></div>' +
 
       '<div class="section-head"><h2>Simulator drills</h2></div>' +
@@ -608,6 +612,14 @@
       'to pass, retries are unlimited, and the reasoning is shown either way.</p>' +
 
       '<div class="grid">' + labs.map(card).join('') + '</div>' +
+
+      '<div class="section-head"><h2>Code labs</h2></div>' +
+      '<p class="muted">Write an expert advisor and run it against the same simulation engine the drills use. ' +
+      'The language is JavaScript rather than MQL5 — the syntax does not transfer, the structure and the guards do — ' +
+      'and every lab is marked on what your EA <b>did</b>, never on what your code looks like. Your work is kept in ' +
+      'this browser between visits.</p>' +
+
+      '<div class="grid">' + code.map(card).join('') + '</div>' +
 
       '<div class="section-head"><h2>Free practice</h2></div>' +
       '<div class="panel"><p>No objective, no assessment, all four instruments and the risk guard set to 1% enforced. ' +
@@ -661,6 +673,7 @@
     // them apart, which is why adding a surface never touches gating.
     //   analysis lab  worked exercise over supplied data      (assets/labs.js)
     //   optsim        live option chain, decay and IV crush   (assets/optsim.js)
+    //   code lab      student's own EA, run in a Worker       (assets/ea-editor.js)
     //   terminal      the candle-feed trading simulator       (assets/terminal.js)
     if (Labs.isLab(d)) {
       Labs.mount(document.getElementById('termHost'), d, record);
@@ -668,6 +681,10 @@
     }
     if (OptSim.isSim(d)) {
       OptSim.mount(document.getElementById('termHost'), d, record);
+      return;
+    }
+    if (EALab.isCode(d)) {
+      EALab.mount(document.getElementById('termHost'), d, record);
       return;
     }
 

@@ -1,0 +1,168 @@
+/* N1 Forex Academy — code lab.
+   Colour comes from the custom properties in style.css, so this inherits both
+   themes without knowing anything about either. */
+
+.ea { display: grid; gap: 1.25rem; }
+
+.ea-brief h2 { margin: 0 0 .5rem; }
+.ea-brief h3 { margin: 1.1rem 0 .4rem; font-size: 1rem; }
+.ea-goals { margin: 0; padding-left: 1.1rem; }
+.ea-goals li { margin: .3rem 0; }
+
+/* ---- the two-column working area ---- */
+.ea-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .ea-main { grid-template-columns: minmax(0, 1fr); }
+}
+
+.ea-pane {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--panel);
+  min-width: 0;
+}
+
+.ea-bar {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .5rem .65rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel-2, var(--panel));
+}
+.ea-spacer { flex: 1; }
+.ea-file {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .82rem; color: var(--muted);
+}
+.ea-bar .btn { padding: .35rem .8rem; font-size: .85rem; }
+
+/* The editor itself. The gutter and the textarea MUST share font, size and
+   line-height or the numbers drift out of step with the code — which looks
+   like a rendering bug and reads as one. */
+.ea-edit {
+  display: flex;
+  align-items: stretch;
+  background: var(--bg);
+  max-height: 30rem;
+}
+.ea-gutter,
+.ea-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .84rem;
+  line-height: 1.55;
+  padding: .7rem 0;
+  margin: 0;
+  border: 0;
+}
+.ea-gutter {
+  flex: 0 0 auto;
+  padding-left: .7rem; padding-right: .6rem;
+  text-align: right;
+  color: var(--muted);
+  opacity: .55;
+  background: transparent;
+  user-select: none;
+  overflow: hidden;
+  white-space: pre;
+  border-right: 1px solid var(--line);
+}
+.ea-code {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-left: .7rem; padding-right: .7rem;
+  resize: vertical;
+  min-height: 22rem;
+  color: var(--text);
+  background: transparent;
+  white-space: pre;
+  overflow: auto;
+  tab-size: 3;
+}
+.ea-code:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.ea-hint {
+  margin: 0; padding: .5rem .7rem;
+  border-top: 1px solid var(--line);
+  font-size: .8rem; color: var(--muted);
+}
+
+/* ---- results ---- */
+.ea-side { display: grid; gap: .8rem; min-width: 0; }
+
+.ea-run {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: .9rem;
+  background: var(--panel);
+}
+.ea-run h4 { margin: 1rem 0 .5rem; font-size: .92rem; }
+
+.ea-verdict { border-radius: 10px; padding: .7rem .85rem; margin-bottom: .8rem; }
+.ea-verdict h3 { margin: 0 0 .25rem; font-size: 1rem; }
+.ea-verdict p { margin: 0; }
+.ea-verdict.good { background: color-mix(in srgb, var(--ok, #1a7f4b) 14%, transparent); border: 1px solid var(--ok, #1a7f4b); }
+.ea-verdict.work { background: color-mix(in srgb, var(--warn, #b8860b) 12%, transparent); border: 1px solid var(--warn, #b8860b); }
+.ea-verdict.bad  { background: color-mix(in srgb, var(--danger, #b23b3b) 12%, transparent); border: 1px solid var(--danger, #b23b3b); }
+
+.ea-line { color: var(--muted); font-size: .85em; white-space: nowrap; }
+
+.ea-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.ea-checks li {
+  display: grid; grid-template-columns: 1.2rem 1fr; gap: .5rem;
+  padding: .5rem .6rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: .88rem;
+}
+.ea-checks li.ok { border-color: color-mix(in srgb, var(--ok, #1a7f4b) 45%, var(--line)); }
+.ea-checks li.no { border-color: color-mix(in srgb, var(--danger, #b23b3b) 45%, var(--line)); }
+.ea-mark { font-weight: 700; line-height: 1.5; }
+.ea-checks li.ok .ea-mark { color: var(--ok, #1a7f4b); }
+.ea-checks li.no .ea-mark { color: var(--danger, #b23b3b); }
+.ea-why { display: block; margin-top: .2rem; color: var(--muted); }
+
+.ea-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); gap: .5rem; }
+.ea-stat {
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: .45rem .55rem; text-align: center;
+}
+.ea-stat.warn { border-color: var(--danger, #b23b3b); }
+.ea-stat-v { display: block; font-weight: 700; font-size: 1.05rem; }
+.ea-stat-l { display: block; font-size: .72rem; color: var(--muted); line-height: 1.25; }
+
+/* ---- reference ---- */
+.ea-api {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: .6rem .9rem;
+  background: var(--panel);
+}
+.ea-api summary { cursor: pointer; font-weight: 600; }
+.ea-api-g { margin-top: .8rem; }
+.ea-api-g h4 { margin: 0 0 .3rem; font-size: .85rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.ea-api dl { margin: 0; display: grid; gap: .25rem; }
+.ea-api dt { margin: 0; }
+.ea-api dt code { font-size: .8rem; }
+.ea-api dd { margin: 0 0 .25rem; font-size: .82rem; color: var(--muted); }
+
+/* ---- console ---- */
+.ea-console-wrap h3 { margin: 0 0 .4rem; font-size: 1rem; }
+.ea-console {
+  margin: 0;
+  max-height: 18rem;
+  overflow: auto;
+  padding: .7rem .8rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .8rem;
+  line-height: 1.5;
+  white-space: pre;
+  color: var(--text);
+}

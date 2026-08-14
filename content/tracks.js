@@ -391,31 +391,36 @@ window.TRACKS = [
       {
         id: 'au-foundation',
         title: 'What it is, and the language',
-        blurb: 'An execution engine multiplies whatever you already had. Then the small corner of MQL an EA actually lives in.',
+        blurb: 'An execution engine multiplies whatever you already had, the small corner of MQL an EA lives in — and then you write one and watch it act 3,800 times.',
         steps: [
           { id: 'm801', type: 'module', ref: 801, pass: 80 },
           { id: 'm802', type: 'module', ref: 802, pass: 80 },
-          { id: 'd-au-guards', type: 'drill', ref: 'au-guards' }
+          { id: 'd-au-guards', type: 'drill', ref: 'au-guards' },
+          { id: 'd-ea-guards', type: 'drill', ref: 'ea-guards' }
         ]
       },
       {
         id: 'au-build',
         title: 'Translation and sizing',
-        blurb: 'Five components become five functions — and the one line that has ended more automated accounts than any strategy flaw.',
+        blurb: 'Five components become five functions, written and run — and the one line that has ended more automated accounts than any strategy flaw.',
         steps: [
           { id: 'm803', type: 'module', ref: 803, pass: 80 },
+          { id: 'd-ea-translate', type: 'drill', ref: 'ea-translate' },
           { id: 'm804', type: 'module', ref: 804, pass: 85 },
-          { id: 'd-au-size', type: 'drill', ref: 'au-size' }
+          { id: 'd-au-size', type: 'drill', ref: 'au-size' },
+          { id: 'd-ea-size', type: 'drill', ref: 'ea-size' }
         ]
       },
       {
         id: 'au-live',
         title: 'Testing, going live, and the close',
-        blurb: 'The biases the strategy tester adds, the failures that only exist live, and the end of all nine tracks.',
+        blurb: 'The biases the tester adds, the limits that stop an EA, a terminal restart you have to survive, and the end of all nine tracks.',
         steps: [
           { id: 'm805', type: 'module', ref: 805, pass: 85 },
           { id: 'd-au-report', type: 'drill', ref: 'au-report' },
+          { id: 'd-ea-limits', type: 'drill', ref: 'ea-limits' },
           { id: 'm806', type: 'module', ref: 806, pass: 85 },
+          { id: 'd-ea-restart', type: 'drill', ref: 'ea-restart' },
           { id: 'g-ea-review', type: 'gate', title: 'Submit your EA for review',
             detail: 'The capstone of the whole programme. Your instructor reads the CODE, not the results: that both guards ' +
                     'are present, that no lot size is hard-coded anywhere, that the stop is computed from structure rather ' +
