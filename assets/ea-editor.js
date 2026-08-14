@@ -112,12 +112,12 @@
      message a student can act on.
      --------------------------------------------------------------------------- */
   function runInWorker(code, task, onDone) {
-    var worker, done = false, timer;
+    var worker, done = false, poll;
 
     function finish(payload) {
       if (done) return;
       done = true;
-      clearTimeout(timer);
+      clearInterval(poll);
       if (worker) { try { worker.terminate(); } catch (e) {} }
       onDone(payload);
     }
@@ -140,13 +140,37 @@
       finish({ ok: false, phase: 'worker', error: (ev && ev.message) || 'The code runner stopped unexpectedly.' });
     };
 
-    timer = setTimeout(function () {
+    /* THE DEADLINE ONLY COUNTS TIME THE TAB IS ACTUALLY VISIBLE.
+
+       A plain setTimeout looks right and is wrong. Browsers throttle background
+       tabs: they delay the timer AND they delay delivery of the worker's reply
+       to the main thread. So a student who clicks Run and switches tab comes
+       back to "your EA ran for 8 seconds without finishing" — their code
+       accused of an infinite loop it does not contain. This was not theoretical;
+       it happened on the first run tested in a hidden tab.
+
+       Accumulating only visible time means a hidden tab can never produce that
+       message. A genuinely looping EA is still caught the moment the student is
+       looking at the page, which is the only moment the message is any use.
+
+       WALL_CAP is the backstop: whatever the tab is doing, a worker does not
+       get to spin forever. */
+    var visibleMs = 0, last = Date.now(), started = last;
+    var WALL_CAP = 120000;
+
+    poll = setInterval(function () {
+      var now = Date.now();
+      if (document.visibilityState !== 'hidden') visibleMs += now - last;
+      last = now;
+
+      if (visibleMs < RUN_TIMEOUT_MS && (now - started) < WALL_CAP) return;
+
       finish({ ok: false, phase: 'timeout',
         error: 'Your EA ran for ' + (RUN_TIMEOUT_MS / 1000) + ' seconds without finishing, so it was ' +
                'stopped. That is almost always a loop with no way out — check any `for` or `while` ' +
                'you have written. OnTick is called for you on every price change; it should do its ' +
                'work once and return, never loop waiting for the next one.' });
-    }, RUN_TIMEOUT_MS);
+    }, 250);
 
     worker.postMessage({ id: 1, code: code, task: task });
   }
