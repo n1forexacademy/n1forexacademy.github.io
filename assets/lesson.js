@@ -139,7 +139,22 @@
             }).join('') +
           '</div>'
         : '';
-      return '<div class="teach">' + paras(t.lead) + terms + paras(t.close) + '</div>';
+      /* Optional code listings, added for the automation track. A lesson that
+         teaches someone to write an EA has to show them the code — inline
+         `backticks` are fine for a variable name and useless for a function.
+
+         Shape:  code: [{ caption, note, lines: ['...','...'] }]
+         Placed between the terms and the closing paragraphs, because by then the
+         vocabulary has been introduced and the listing is readable. */
+      var code = (t.code || []).map(function (b) {
+        return '<figure class="lcode">' +
+          (b.caption ? '<figcaption>' + esc(b.caption) + '</figcaption>' : '') +
+          '<pre><code>' + (b.lines || []).map(esc).join('\n') + '</code></pre>' +
+          (b.note ? '<p class="lcode-n">' + md(b.note) + '</p>' : '') +
+        '</figure>';
+      }).join('');
+
+      return '<div class="teach">' + paras(t.lead) + terms + code + paras(t.close) + '</div>';
     }
 
     /* Students never see slides.

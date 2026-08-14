@@ -122,3 +122,37 @@ a.lsn:hover .lsn-t{color:var(--accent)}
 /* icons inside the lesson list */
 .lsn-i svg{width:14px;height:14px;display:block}
 .lock-big svg{width:34px;height:34px;margin:0 auto;color:var(--ink-3)}
+
+/* ---- code listings in lessons (teach.code) ----
+   Added for the automation track. Students learning to write an EA need to see
+   real code; inline backticks handle a variable name and nothing larger. */
+.teach .lcode {
+  margin: 1.4rem 0;
+  border: 1px solid var(--line, #ccc);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.teach .lcode figcaption {
+  padding: .5rem .85rem;
+  font-size: .85rem;
+  font-weight: 600;
+  letter-spacing: .01em;
+  border-bottom: 1px solid var(--line, #ccc);
+  background: color-mix(in srgb, currentColor 5%, transparent);
+}
+.teach .lcode pre {
+  margin: 0;
+  padding: .85rem;
+  overflow-x: auto;              /* long lines scroll, the page never does */
+  font-size: .88rem;
+  line-height: 1.55;
+  tab-size: 2;
+}
+.teach .lcode code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.teach .lcode-n {
+  margin: 0;
+  padding: .6rem .85rem;
+  font-size: .9rem;
+  border-top: 1px solid var(--line, #ccc);
+}
+@media (max-width: 560px) { .teach .lcode pre { font-size: .8rem; } }
