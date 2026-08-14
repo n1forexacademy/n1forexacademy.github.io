@@ -174,5 +174,58 @@ window.TRACKS = [
         steps: [{ id: 'cert-futures', type: 'cert', title: 'Certificate in Futures Markets' }]
       }
     ]
+  },
+  {
+    id: 'options',
+    title: 'Options',
+    subtitle: 'The right, not the obligation',
+    blurb: 'The hardest instrument in the course. One side gets to choose, and everything follows from that — time decay, volatility you did not ask for, and three things to get right at once instead of one.',
+    requires: 'futures',
+    certificateTitle: 'Certificate in Options Markets',
+    stages: [
+      {
+        id: 'op-instrument',
+        title: 'The instrument',
+        blurb: 'Rights against obligations, and what a premium is actually made of.',
+        steps: [
+          { id: 'm401', type: 'module', ref: 401, pass: 80 },
+          { id: 'm402', type: 'module', ref: 402, pass: 80 },
+          { id: 'd-op-split', type: 'drill', ref: 'op-split' }
+        ]
+      },
+      {
+        id: 'op-forces',
+        title: 'Time and volatility',
+        blurb: 'The clock that runs against a buyer, and the exposure nobody chooses but everybody has.',
+        steps: [
+          { id: 'm403', type: 'module', ref: 403, pass: 85 },
+          { id: 'm404', type: 'module', ref: 404, pass: 80 },
+          { id: 'd-op-crush', type: 'drill', ref: 'op-crush' },
+          { id: 'm405', type: 'module', ref: 405, pass: 80 }
+        ]
+      },
+      {
+        id: 'op-process',
+        title: 'Structures and process',
+        blurb: 'A short list of structures worth knowing, the obligation that arrives uninvited, and an honest answer about whether this belongs in your account.',
+        steps: [
+          { id: 'm406', type: 'module', ref: 406, pass: 85 },
+          { id: 'd-op-spread', type: 'drill', ref: 'op-spread' },
+          { id: 'd-op-assign', type: 'drill', ref: 'op-assign' },
+          { id: 'g-options-plan', type: 'gate', title: 'Submit your options plan',
+            detail: 'The addendum from Lab 406. Your instructor checks that bought options are sized with the full premium ' +
+                    'at risk, that the multiplier has been applied, that all three bounds of the spread are computed, that ' +
+                    'naked short options are excluded rather than conditionally permitted, and that the assignment ' +
+                    'checklist names exercise style and dividend dates. Concluding that options serve one narrow purpose ' +
+                    'in your process, or none, is a pass.' }
+        ]
+      },
+      {
+        id: 'op-certificate',
+        title: 'Certificate',
+        blurb: 'Recognition that you completed the options programme.',
+        steps: [{ id: 'cert-options', type: 'cert', title: 'Certificate in Options Markets' }]
+      }
+    ]
   }
 ];
