@@ -93,7 +93,8 @@ assets/
 worker/                 OPTIONAL backend. Only needed for server mode (§7).
   src/index.js          Auth + progress + messaging API (Worker). §7.1.
   schema.sql            D1 tables: students, sessions, progress.
-  migrations/           002 invites, 003 usernames, 004 messages. In order.
+  migrations/           002 invites, 003 usernames, 004 messages,
+                        005 attachments. Apply in order.
   test/run-tests.sh     43-assertion suite against the live Worker.
   wrangler.toml         Config. database_id and ALLOWED_ORIGINS go here.
 
@@ -839,6 +840,50 @@ what is decided by `threadIdFor`, not by which side of a gate a route is written
 
 The unread badge attaches to any element carrying `data-msg-link` and polls once a minute, skipping
 hidden tabs.
+
+#### Attachments
+
+Up to three pictures per message, both directions. A student pastes a screenshot straight into the
+box — Snipping Tool, PrtScn, a platform's "copy chart" all put an image on the clipboard, and making
+someone save a file first is the difference between a feature people use and one they do not. Drag
+and drop and a file picker also work.
+
+**Compressed in the browser before it is ever sent**: downscaled to 1600px on the long edge and
+re-encoded as JPEG, quality stepped down until it fits under 420 KB. Measured: a 2560×1440 chart
+capture → **54 KB**; a 3840×2160 image of pure noise, a deliberate worst case, 27.2 MB → **375 KB**.
+That compression is what makes storing bytes in D1 viable at all.
+
+**The bytes live in D1, not R2.** R2 is the right home for objects and would be the obvious choice,
+but enabling it requires a payment method on the account, and this platform's premise is free tiers
+with no card attached (see `FREE-STACK-GUIDE.md`). D1's free tier is 5 GB. Moving to R2 later means
+changing where `data` is read and written and nothing else, which is why the bytes sit in their own
+table rather than in a column on `messages`.
+
+> ⚠️ **Bind `.buffer`, never the `Uint8Array` view.** Binding the view stores its *toString* — a
+> 72-byte PNG came back as the 152-character text `"137,80,78,71,13,10,26,10,7,7,…"`. Every picture
+> would have been silently corrupted behind a successful-looking upload. Caught only by comparing
+> the bytes that came back against the bytes that went in; a check that the request returned 200
+> would have passed. There is now a SHA-256 round-trip check over 40 KB of random data.
+
+**Serving is authenticated, not a public URL.** `GET /api/attachment/<id>` takes the same bearer
+token as any other call and the same `threadIdFor()` rule decides access — which is why the front
+end fetches images with `fetch` and turns them into blob URLs rather than putting the path into an
+`<img src>`, which could not carry the token.
+
+Tested against the live Worker:
+
+| Attempt | Result |
+|---|---|
+| HTML uploaded as an image | **415** |
+| SVG uploaded (scriptable — not allowlisted) | **415** |
+| Real PNG bytes claiming `mime: text/html` | stored as `image/png` — the sniffed type wins |
+| Another student fetching an attachment by id | **403** |
+| No token | **401** |
+| 900 KB payload | **413** (D1 itself accepted 600 KB through the binding) |
+
+Responses carry `X-Content-Type-Options: nosniff`, `Content-Security-Policy: default-src 'none';
+sandbox` and `Content-Disposition: attachment`, so even a hypothetical non-image that got past the
+sniffer would be inert.
 
 ## 8. Verifying a change
 
