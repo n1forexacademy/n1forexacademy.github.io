@@ -202,8 +202,10 @@ window.TRACKS = [
         blurb: 'The clock that runs against a buyer, and the exposure nobody chooses but everybody has.',
         steps: [
           { id: 'm403', type: 'module', ref: 403, pass: 85 },
+          { id: 'd-opt-decay', type: 'drill', ref: 'opt-decay' },
           { id: 'm404', type: 'module', ref: 404, pass: 80 },
           { id: 'd-op-crush', type: 'drill', ref: 'op-crush' },
+          { id: 'd-opt-crush', type: 'drill', ref: 'opt-crush' },
           { id: 'm405', type: 'module', ref: 405, pass: 80 }
         ]
       },
@@ -214,6 +216,7 @@ window.TRACKS = [
         steps: [
           { id: 'm406', type: 'module', ref: 406, pass: 85 },
           { id: 'd-op-spread', type: 'drill', ref: 'op-spread' },
+          { id: 'd-opt-spread', type: 'drill', ref: 'opt-spread' },
           { id: 'd-op-assign', type: 'drill', ref: 'op-assign' },
           { id: 'g-options-plan', type: 'gate', title: 'Submit your options plan',
             detail: 'The addendum from Lab 406. Your instructor checks that bought options are sized with the full premium ' +

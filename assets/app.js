@@ -553,14 +553,16 @@
     function card(d) {
       var passed = prog.drills && prog.drills[d.id] && prog.drills[d.id].passed;
       return '<a class="card drill-card' + (passed ? ' done' : '') + '" href="#/drill/' + d.id + '">' +
-        '<span class="num">' + (Labs.isLab(d) ? 'Lab' : 'Drill') + ' ' +
+        '<span class="num">' + (OptSim.isSim(d) ? 'Options lab' : Labs.isLab(d) ? 'Lab' : 'Drill') + ' ' +
           (passed ? '· <span class="tick">passed ✓</span>' : '· Module ' + d.module) + '</span>' +
         '<h3>' + esc(d.title) + '</h3>' +
         '<p>' + esc(d.brief) + '</p>' +
         '<div class="chips">' +
           // Analysis labs have no instrument and no risk policy — they are
           // worked exercises, not simulator sessions. See assets/labs.js.
-          (Labs.isLab(d)
+          (OptSim.isSim(d)
+            ? '<span class="chip">Live option chain</span><span class="chip">Decay &amp; volatility</span>'
+            : Labs.isLab(d)
             ? '<span class="chip">Worked exercise</span><span class="chip">No simulator</span>'
             : '<span class="chip">' + esc(FX.INSTRUMENTS[d.instrument].name) + '</span>' +
               '<span class="chip">Risk guard: ' +
@@ -569,15 +571,16 @@
         '</div></a>';
     }
 
-    var sim  = drills.filter(function (d) { return !Labs.isLab(d); });
+    var sim  = drills.filter(function (d) { return !Labs.isLab(d) && !OptSim.isSim(d); });
+    var opts = drills.filter(function (d) { return OptSim.isSim(d); });
     var labs = drills.filter(function (d) { return Labs.isLab(d); });
 
     app.innerHTML =
       '<div class="crumb"><a href="#/">Modules</a> / Trading Floor</div>' +
       '<div class="module-head"><h1>Trading Floor</h1>' +
       '<p class="lede">Every practical piece of the course, in one place. ' + sim.length + ' assessed drills run on the ' +
-      'simulator; ' + labs.length + ' worked labs cover the equities and bonds tracks, where the decisions are analytical ' +
-      'rather than a session at the order button.</p>' +
+      'market simulator, ' + opts.length + ' on a live option chain, and ' + labs.length + ' are worked labs for the ' +
+      'tracks where the decisions are analytical rather than a session at the order button.</p>' +
       '<div class="chips"><span class="chip">' + done + ' of ' + drills.length + ' passed</span></div></div>' +
 
       '<div class="section-head"><h2>Simulator drills</h2></div>' +
@@ -589,6 +592,14 @@
       'you and your instructor — which is what makes it teachable.</p></div>' +
 
       '<div class="grid">' + sim.map(card).join('') + '</div>' +
+
+      '<div class="section-head"><h2>Options chain</h2></div>' +
+      '<p class="muted">A live option chain priced from a teaching model. Take a position, advance time, and watch ' +
+      'the three things the options track describes but cannot make you believe: extrinsic value draining while ' +
+      'nothing happens, a correct directional call losing to a volatility collapse, and the spread that survives it. ' +
+      'The prices are a teaching model, not tradeable quotes.</p>' +
+
+      '<div class="grid">' + opts.map(card).join('') + '</div>' +
 
       '<div class="section-head"><h2>Analysis labs</h2></div>' +
       '<p class="muted">Shares and bonds are not on the simulator, and putting them there would teach the wrong thing — ' +
@@ -646,11 +657,17 @@
       if (p.drill && p.drill !== 'free') Auth.progress({ drill: p.drill, passed: p.passed });
     }
 
-    // Equities and bonds have no simulator instruments, so their practical work
-    // is a worked exercise rather than a terminal session. Both record into
-    // progress.drills identically, so the path engine cannot tell them apart.
+    // Three practical surfaces, one progress store. The path engine cannot tell
+    // them apart, which is why adding a surface never touches gating.
+    //   analysis lab  worked exercise over supplied data      (assets/labs.js)
+    //   optsim        live option chain, decay and IV crush   (assets/optsim.js)
+    //   terminal      the candle-feed trading simulator       (assets/terminal.js)
     if (Labs.isLab(d)) {
       Labs.mount(document.getElementById('termHost'), d, record);
+      return;
+    }
+    if (OptSim.isSim(d)) {
+      OptSim.mount(document.getElementById('termHost'), d, record);
       return;
     }
 

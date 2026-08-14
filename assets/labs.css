@@ -83,3 +83,53 @@
   .lab-sort .lab-row { align-items: stretch; }
   .lab-sort select { flex: 1 1 100%; }
 }
+
+/* ---- options practice surface (assets/optsim.js) ----
+   Kept in this file rather than a new one: it shares the data-table treatment
+   and both are small. The chain is the only genuinely new layout. */
+
+.optsim .optbar {
+  display: flex; flex-wrap: wrap; gap: 1.2rem;
+  padding: .7rem .9rem; margin-bottom: 1rem;
+  border: 1px solid var(--line, #ccc); border-radius: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.optsim .optbar b { font-weight: 600; opacity: .7; margin-right: .35rem; }
+.optsim h4 { margin: 1.3rem 0 .5rem; }
+
+.optchain, .optbook { width: 100%; font-variant-numeric: tabular-nums; font-size: .92rem; }
+.optchain td.num, .optbook td.num { text-align: right; }
+.optchain td.px { text-align: center; font-weight: 700; }
+.optchain tr.atm { background: color-mix(in srgb, var(--acc, #b8860b) 12%, transparent); }
+.optchain td.acts { white-space: nowrap; text-align: center; }
+
+.optsim button.mini {
+  font: inherit; font-size: .8rem; line-height: 1;
+  padding: .25rem .4rem; margin: 0 .1rem;
+  color: inherit; background: transparent;
+  border: 1px solid var(--line, #ccc); border-radius: 6px; cursor: pointer;
+}
+.optsim button.mini:hover { border-color: var(--acc, #b8860b); }
+.optsim button.mini:focus-visible { outline: 2px solid var(--acc, #b8860b); outline-offset: 1px; }
+
+.optgreeks {
+  display: flex; flex-wrap: wrap; gap: 1.1rem;
+  margin-top: .7rem; padding-top: .7rem;
+  border-top: 1px solid var(--line, #ccc);
+  font-variant-numeric: tabular-nums; font-size: .92rem;
+}
+.optgreeks b { opacity: .7; margin-right: .3rem; }
+.optgreeks .tot { margin-left: auto; font-weight: 600; }
+
+.optsim .optctl { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1.2rem 0; }
+.optsim .optlog { font-size: .9rem; }
+
+/* Never colour alone — the sign is always present in the text too. */
+.optsim .up { color: var(--up, #1e8449); font-weight: 600; }
+.optsim .dn { color: var(--dn, #c0392b); font-weight: 600; }
+
+@media (max-width: 640px) {
+  .optchain { font-size: .82rem; }
+  .optsim .optbar { gap: .7rem; font-size: .9rem; }
+  .optgreeks .tot { margin-left: 0; }
+}
