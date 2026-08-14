@@ -109,7 +109,12 @@
               '<button class="side sell" data-side="sell">SELL<span id="tBid">—</span></button>' +
               '<button class="side buy" data-side="buy">BUY<span id="tAsk">—</span></button>' +
             '</div>' +
-            '<label>Volume (lots)<input type="number" id="tLots" step="0.01" min="0.01" value="0.10"></label>' +
+            // Units differ by instrument kind: lots for fx, whole shares, whole contracts.
+            // A share or futures ticket that says "lots" teaches the wrong vocabulary, and a
+            // 0.01 step on a futures ticket invites a position that cannot exist.
+            '<label>Volume (' + (this.spec().unit || 'lots') + ')' +
+            '<input type="number" id="tLots" step="' + this.sizeStep() + '" min="' + this.sizeStep() +
+            '" value="' + this.defaultSize() + '"></label>' +
             '<label>Stop loss (pips)<input type="number" id="tSL" step="1" min="0" value="30"></label>' +
             '<label>Take profit (pips)<input type="number" id="tTP" step="1" min="0" value="60"></label>' +
             '<button class="btn-size" id="tSize">Size it to policy risk</button>' +
@@ -222,10 +227,30 @@
     this.cw = w; this.ch = h;
   };
 
+  /* Instrument-kind helpers. fx trades in fractional lots; shares and futures do not.
+     Rounding a futures order up to one whole contract is not a rounding error — it is a decision
+     to risk several times the intended amount — so the ticket does not offer fractions at all. */
+  Terminal.prototype.spec = function () { return FX.INSTRUMENTS[this.symbol]; };
+
+  Terminal.prototype.sizeStep = function () {
+    return this.spec().kind === 'fx' ? 0.01 : 1;
+  };
+
+  Terminal.prototype.defaultSize = function () {
+    var k = this.spec().kind;
+    return k === 'future' ? 1 : k === 'share' ? 100 : 0.10;
+  };
+
+  Terminal.prototype.sizeLabel = function (n) {
+    var k = this.spec().kind;
+    return (k === 'fx' ? n.toFixed(2) : String(Math.round(n))) + ' ' + (this.spec().unit || 'lots');
+  };
+
   /* ---------- ordering ---------- */
   Terminal.prototype.readTicket = function (side) {
     var feed = this.feeds[this.symbol], spec = feed.spec;
     var lots = parseFloat(this.root.querySelector('#tLots').value) || 0;
+    if (spec.kind !== 'fx') lots = Math.floor(lots);   // no half contracts, no fractional shares
     var slPips = parseFloat(this.root.querySelector('#tSL').value) || 0;
     var tpPips = parseFloat(this.root.querySelector('#tTP').value) || 0;
     var entry = side === 'buy' ? feed.ask() : feed.bid();
@@ -241,8 +266,8 @@
     if (!req.sl) { this.toast('Set a stop loss first — without one there is no risk to size against.'); return; }
     var s = this.guard.suggestLots(req, this.feeds[this.symbol], this.account, this.feeds);
     if (s && s > 0) {
-      this.root.querySelector('#tLots').value = s.toFixed(2);
-      this.toast('Sized to ' + s.toFixed(2) + ' lots — that makes your ' + req.slPips +
+      this.root.querySelector('#tLots').value = this.spec().kind === 'fx' ? s.toFixed(2) : String(Math.floor(s));
+      this.toast('Sized to ' + this.sizeLabel(s) + ' — that makes your ' + req.slPips +
                  ' pip stop cost exactly ' + this.guard.policy.maxRiskPct + '% of equity.');
     } else {
       this.toast('Cannot size — check the stop distance.');

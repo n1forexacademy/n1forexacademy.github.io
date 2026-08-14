@@ -30,15 +30,57 @@
   /* ---------- instrument specifications ----------
      contract = units per 1.00 lot. pip = price increment of one pip.
      quote    = currency the pip value lands in before conversion. */
+  /* INSTRUMENTS
+     `kind` decides how size, margin and P/L are computed:
+
+       'fx'      lots × contract. Margin = notional / account leverage. The original four.
+       'share'   size is a NUMBER OF SHARES (contract 1). Margin = notional / leverage, so an
+                 account at leverage 1 pays in full, exactly like owning the stock. Shares also
+                 carry `gap`, which fires a scheduled overnight jump — see Feed._step. That is
+                 what lets Module 107's "size it, then gap it" be practised rather than read.
+       'future'  size is a NUMBER OF CONTRACTS. Margin is a FIXED amount per contract set by the
+                 exchange (`initialMargin`), NOT notional / leverage, and P/L comes from
+                 `tickValue` rather than from contract × pip.
+
+     Adding a kind means touching exactly three places: pipValue, marginFor, and the unit label.
+     Everything else — stops, stop-out, the risk guard, the drill tests — already generalises.
+
+     IMPORTANT: the feed is deterministic from a seed, so a drill replays identically for a
+     student and their instructor. Any new call to this.rnd() inside _step would shift every
+     existing forex drill. The gap logic is therefore guarded on `spec.gap` existing. */
   var INSTRUMENTS = {
-    EURUSD: { id: 'EURUSD', name: 'EUR/USD', contract: 100000, pip: 0.0001, digits: 5, quote: 'USD',
+    EURUSD: { id: 'EURUSD', name: 'EUR/USD', kind: 'fx', unit: 'lots', contract: 100000, pip: 0.0001, digits: 5, quote: 'USD',
               start: 1.0850, vol: 0.00042, spread: 1.2, commission: 7, swapLong: -0.68, swapShort: 0.21 },
-    GBPUSD: { id: 'GBPUSD', name: 'GBP/USD', contract: 100000, pip: 0.0001, digits: 5, quote: 'USD',
+    GBPUSD: { id: 'GBPUSD', name: 'GBP/USD', kind: 'fx', unit: 'lots', contract: 100000, pip: 0.0001, digits: 5, quote: 'USD',
               start: 1.2740, vol: 0.00055, spread: 1.6, commission: 7, swapLong: -0.94, swapShort: 0.32 },
-    USDJPY: { id: 'USDJPY', name: 'USD/JPY', contract: 100000, pip: 0.01, digits: 3, quote: 'JPY',
+    USDJPY: { id: 'USDJPY', name: 'USD/JPY', kind: 'fx', unit: 'lots', contract: 100000, pip: 0.01, digits: 3, quote: 'JPY',
               start: 148.40, vol: 0.055, spread: 1.4, commission: 7, swapLong: 0.86, swapShort: -1.42 },
-    XAUUSD: { id: 'XAUUSD', name: 'Gold (XAU/USD)', contract: 100, pip: 0.01, digits: 2, quote: 'USD',
-              start: 2338.00, vol: 1.35, spread: 22, commission: 9, swapLong: -3.10, swapShort: 1.05 }
+    XAUUSD: { id: 'XAUUSD', name: 'Gold (XAU/USD)', kind: 'fx', unit: 'lots', contract: 100, pip: 0.01, digits: 2, quote: 'USD',
+              start: 2338.00, vol: 1.35, spread: 22, commission: 9, swapLong: -3.10, swapShort: 1.05 },
+
+    /* ---- shares. Size in shares; step is one penny. ----
+       `gap` schedules an overnight jump: after `every` bars, price moves by `pct` in a direction
+       chosen by the seed. Stops do not protect across it, which is the entire teaching point. */
+    NBR:  { id: 'NBR', name: 'Northbrook Retail', kind: 'share', unit: 'shares', contract: 1, pip: 0.01, digits: 2, quote: 'USD',
+            start: 412.00, vol: 0.62, spread: 3, commission: 0.02, swapLong: 0, swapShort: 0,
+            gap: { every: 240, pct: 0.11, label: 'Results published overnight' } },
+    KAV:  { id: 'KAV', name: 'Kestrel Aviation', kind: 'share', unit: 'shares', contract: 1, pip: 0.01, digits: 2, quote: 'USD',
+            // Low vol on purpose: an ordinary stop must SURVIVE to the announcement, or the
+            // student is simply stopped out normally and never meets the lesson the drill exists
+            // to teach. Quiet share, one violent scheduled event — which is the realistic shape.
+            start: 108.00, vol: 0.10, spread: 2, commission: 0.02, swapLong: 0, swapShort: 0,
+            // dir: -1 because a profit warning only goes one way. Fixing the direction makes the
+            // share-gap drill deterministic — a long position always meets the lesson, rather than
+            // the student passing or failing on a coin flip they did not control.
+            gap: { every: 45, pct: 0.22, dir: -1, label: 'Profit warning' } },
+
+    /* ---- futures. Size in contracts; margin is fixed per contract. ---- */
+    MESZ: { id: 'MESZ', name: 'Micro Index Future', kind: 'future', unit: 'contracts', contract: 5, pip: 0.25, digits: 2, quote: 'USD',
+            start: 5000.00, vol: 1.10, spread: 1, commission: 0.75, swapLong: 0, swapShort: 0,
+            tickValue: 1.25, initialMargin: 1200, maintMargin: 1000 },
+    MCLZ: { id: 'MCLZ', name: 'Micro Crude Future', kind: 'future', unit: 'contracts', contract: 100, pip: 0.01, digits: 2, quote: 'USD',
+            start: 78.00, vol: 0.030, spread: 2, commission: 0.50, swapLong: 0, swapShort: 0,
+            tickValue: 1.00, initialMargin: 620, maintMargin: 520 }
   };
 
   var TIMEFRAMES = { M1: 1, M5: 5, M15: 15, M30: 30, H1: 60, H4: 240, D1: 1440 };
@@ -65,6 +107,13 @@
     this.forming = null;
     this.spreadPips = this.spec.spread;
     this.newsCountdown = 90 + Math.floor(this.rnd() * 260);
+
+    /* Scheduled overnight gap, for shares only. Counted in bars rather than ticks so the
+       announcement lands on a bar boundary the way a real one does. `gaps` records each jump
+       so a drill's test() can prove the student was holding through it. */
+    this.gapBars = this.spec.gap ? this.spec.gap.every : 0;
+    this.gaps = [];
+    this.barsSeen = 0;
 
     this._warm(opts.history || 600);
   }
@@ -120,6 +169,20 @@
       this.barTime += 60000;
       this.forming = null;
       this.tickInBar = 0;
+      this.barsSeen++;
+
+      /* The gap. Guarded on spec.gap so no forex feed ever reaches this branch, which keeps
+         every existing drill's seeded sequence bit-identical. Price jumps between bars with
+         nothing traded in between — so a stop inside the jump does not fill at its level, it
+         fills at the reopen. That is the whole lesson, and it cannot be taught by reading. */
+      if (this.spec.gap && !silent && --this.gapBars <= 0) {
+        var g = this.spec.gap;
+        var dir = g.dir || (this.rnd() < 0.5 ? -1 : 1);
+        var before = this.price;
+        this.price = Math.max(this.spec.pip * 10, this.price * (1 + dir * g.pct));
+        this.gaps.push({ at: this.barTime, from: before, to: this.price, pct: dir * g.pct, label: g.label });
+        this.gapBars = g.every;
+      }
     }
     if (!silent) this.lastTickAt = Date.now();
     return p;
@@ -180,7 +243,13 @@
   /* ---------- pip value ----------
      Returns account-currency value of one pip for the given lots.
      Account currency is USD throughout the academy. */
+  /* Value of one `pip` (one minimum increment) for a given size.
+     Futures state it directly as tickValue, because contract × pip does not describe a
+     futures contract's economics. Shares fall out of the fx maths with contract = 1:
+     0.01 × 1 × 625 shares = $6.25 per penny, which is correct. */
   function pipValue(spec, lots, price) {
+    if (spec.kind === 'future') return spec.tickValue * lots;
+
     var perLot;
     if (spec.quote === 'USD') {
       perLot = spec.pip * spec.contract;                 // e.g. 0.0001 * 100000 = $10
@@ -214,10 +283,27 @@
     if (this.events.length > 400) this.events.shift();
   };
 
+  /* Margin required to hold a position.
+
+     Futures do NOT use account leverage. The exchange sets a fixed amount per contract, and it
+     can be raised mid-position when volatility rises — which is why Module 302 insists a cash
+     reserve is what holds a position where margin only opens it.
+
+     Shares use notional / leverage, so an account created with leverage 1 pays the full amount,
+     exactly like owning the stock outright. That is what makes the Module 107 gap drill honest:
+     the loss comes from position size, not from a margin call. */
   Account.prototype.marginFor = function (spec, lots, price) {
+    if (spec.kind === 'future') return (spec.initialMargin || 0) * lots;
+
     var notional = lots * spec.contract * (spec.quote === 'USD' ? price : 1);
     if (spec.id === 'USDJPY') notional = lots * spec.contract;   // USD is the base here
     return notional / this.leverage;
+  };
+
+  /* What a position is actually worth, as opposed to what it cost to open. Notional is the
+     honest measure of exposure and the terminal shows it for every position. */
+  Account.prototype.notionalFor = function (spec, lots, price) {
+    return lots * spec.contract * price;
   };
 
   Account.prototype.floating = function (feeds) {

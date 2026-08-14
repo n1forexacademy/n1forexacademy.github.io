@@ -60,6 +60,8 @@ window.TRACKS = [
         steps: [
           { id: 'm107', type: 'module', ref: 107, pass: 85 },
           { id: 'd-eq-gap', type: 'drill', ref: 'eq-gap' },
+          { id: 'd-share-size', type: 'drill', ref: 'share-size' },
+          { id: 'd-share-gap', type: 'drill', ref: 'share-gap' },
           { id: 'm108', type: 'module', ref: 108, pass: 80 },
           { id: 'g-equity-plan', type: 'gate', title: 'Submit your written equity plan',
             detail: 'Hand your instructor the Equity Plan from Lab 108. They will check the screen order starts with ' +
@@ -140,7 +142,8 @@ window.TRACKS = [
         steps: [
           { id: 'm301', type: 'module', ref: 301, pass: 80 },
           { id: 'd-ft-spec', type: 'drill', ref: 'ft-spec' },
-          { id: 'm302', type: 'module', ref: 302, pass: 85 }
+          { id: 'm302', type: 'module', ref: 302, pass: 85 },
+          { id: 'd-futures-margin', type: 'drill', ref: 'futures-margin' }
         ]
       },
       {
