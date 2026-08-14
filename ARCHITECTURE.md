@@ -13,7 +13,7 @@ simulator works, how to add content, what the access gate is and is not, and how
 A static teaching site. **No build step, no framework, no package.json, no dependencies.**
 Plain HTML/CSS/JS loaded with `<script>` tags. Open `index.html` through any web server and it runs.
 
-Eight tracks, unlocked in sequence, each ending in its own certificate:
+Nine tracks, unlocked in sequence, each ending in its own certificate:
 
 | Track | Modules | Lessons | Practical | Unlocks after |
 |---|---|---|---|---|
@@ -25,23 +25,26 @@ Eight tracks, unlocked in sequence, each ending in its own certificate:
 | Crypto & Digital Assets | 5 (ids 501–505) | 10 | 3 labs | Options certificate |
 | Commodities | 5 (ids 601–605) | 10 | 3 labs | Crypto certificate |
 | Spread Betting | 4 (ids 701–704) | 8 | 2 labs | Commodities certificate |
+| Trading Automation | 6 (ids 801–806) | 12 | 3 labs | Spread Betting certificate |
 
-**51 modules, 134 lessons, 32 practical pieces.** Tracks unlock in a strict chain; each ends in its
+**57 modules, 146 lessons, 38 practical pieces.** Tracks unlock in a strict chain; each ends in its
 own certificate. The order is pedagogical, not alphabetical — futures builds on forex margin and
 equity exchange mechanics, options is the hardest instrument and assumes all of it, crypto sits late
 because it is the easiest to start trading and the fastest to end you, commodities builds directly on
 futures, and spread betting is last because it is a *wrapper* rather than a market and is almost
-entirely transfer.
+entirely transfer. Automation is last because it is the payoff to a promise module 12 makes — and
+because it needs the written plan from module 11 to translate.
 
-> ⚠️ **The last lesson of the last track sums up the whole course.** That is currently `l704.js`.
-> `l505.js` held that role when crypto was last and had to be narrowed when tracks were added — its
-> header carries a warning. If you add or reorder tracks, check both.
+> ⚠️ **The last lesson of the last track sums up the whole course.** That is currently `l806.js`.
+> **This has now caught us twice**: `l505.js` held the role when crypto was last, then `l704.js` when
+> spread betting was. Both had to be narrowed and both carry the warning in their headers.
+> **If you add or reorder tracks, narrow the previous last lesson BEFORE anything else.**
 
 Each module is delivered lesson-by-lesson: read a short lesson, pass a two-question check on it,
 then the next opens. The module test unlocks only when every lesson is passed.
 
-Plus a **Trading Floor** carrying all 35 practical pieces: **10 simulator drills** (7 fx, 2 share,
-1 futures), **3 options labs** on a live chain, and **22 analysis labs**. Three surfaces, one
+Plus a **Trading Floor** carrying all 38 practical pieces: **10 simulator drills** (7 fx, 2 share,
+1 futures), **3 options labs** on a live chain, and **25 analysis labs**. Three surfaces, one
 progress store — the path engine cannot tell them apart, which is why adding a surface never touches
 gating. See §4 for instrument kinds, §4.1 for options, §5 for labs.
 
@@ -101,8 +104,8 @@ tools/
 
 content/
   roster.js             API_BASE switch + local-mode access codes. EDIT THIS.
-  catalog.js            GENERATED. Metadata for all 51 modules — see §2.1.
-  tracks.js             The eight tracks and their stages. Eager, small.
+  catalog.js            GENERATED. Metadata for all 57 modules — see §2.1.
+  tracks.js             The nine tracks and their stages. Eager, small.
   path.js               The forex track's stages + demo-period thresholds.
   modules/mN.js         One file per module. Lazy. 1–12 forex, 101–108 equities,
                         201–206 bonds, 301–305 futures, 401–406 options,
@@ -114,6 +117,7 @@ content/
   labs-crypto.js        3 analysis labs for the crypto track.
   labs-commodities.js   3 analysis labs for the commodities track.
   labs-spreadbet.js     2 analysis labs for the spread betting track.
+  labs-automation.js    3 analysis labs for the automation track.
   drills-markets.js     3 SIMULATOR drills for shares and futures.
   drills-options.js     3 options-chain drills (kind: 'optsim').
   labs.js               7 analysis labs for equities and bonds. Worked exercises,
@@ -125,7 +129,7 @@ content/
 ### 2.1 Lazy loading and the catalogue
 
 Loading every module eagerly meant a 607 KB download before anything rendered, and the course has
-since grown to 51 modules. Content is fetched **per module, on demand**.
+since grown to 57 modules. Content is fetched **per module, on demand**.
 
 The piece that makes this work is **`content/catalog.js`**: id, title, tagline,
 level, duration and counts for every module, ~11 KB total. The journey, library

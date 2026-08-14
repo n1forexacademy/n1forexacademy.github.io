@@ -14,8 +14,8 @@ window.COURSE = (window.COURSE || []).concat([
 {
   id: 704,
   track: 'spreadbet',
-  title: "Tax, Suitability and the End of the Course",
-  tagline: "The most misunderstood feature of this wrapper, stated honestly — and then the close of all eight tracks.",
+  title: "Tax, Suitability and Eight Markets Behind You",
+  tagline: "The most misunderstood feature of this wrapper, stated honestly — and then eight markets behind you, with one track to go.",
   level: "Wrappers",
   duration: "80 min",
 
@@ -24,7 +24,7 @@ window.COURSE = (window.COURSE || []).concat([
     "Explain why losses not being relievable is a real cost, not a footnote",
     "Complete the final extension of your risk policy",
     "Decide whether this wrapper suits you at all",
-    "Say what eight tracks did and did not equip you to do"
+    "Say what eight markets did and did not equip you to do, and what the last track adds"
   ],
 
   misconceptions: [
@@ -96,25 +96,26 @@ window.COURSE = (window.COURSE || []).concat([
         "**Does not suit:** anyone outside the jurisdictions where it exists — which is most of the world.",
         "**And as with every track: concluding it has no place in your process is a competent conclusion.** Sixth time."
       ],
-      note: "Consistent with futures, options, crypto and commodities. This is the last of the six permissions to decline, and it should be delivered as plainly as the others." },
+      note: "Consistent with futures, options, crypto and commodities. This is the sixth of seven permissions to decline — Module 806 gives the last — and it should be delivered as plainly as the others." },
 
-    { kicker: "The end",
-      title: "Eight tracks, one process",
+    { kicker: "Eight down",
+      title: "Eight markets, one process — and one track left",
       bullets: [
         "**Eight markets and wrappers:** currencies, shares, bonds, futures, options, crypto, commodities, spread betting.",
         "**One risk policy**, written in Module 10 and extended seven times. Never replaced.",
         "**One verdict on analytical tools**, met repeatedly: context, not signals.",
         "**One return shape you learned to distrust:** many small wins, one enormous loss.",
         "**One correlation lesson**, met in currency pairs, equity sectors, token baskets and commodity families.",
-        "**You are not equipped to trade eight markets. You are equipped to evaluate any of them and to walk away from most.**"
+        "**You are not equipped to trade eight markets. You are equipped to evaluate any of them and to walk away from most.**",
+        "**One track left.** Module 12 promised that if you cannot code a rule, you do not understand it well enough to run it. **Automation is where that gets settled.**"
       ],
-      note: "Final teaching slide of the entire course. The recurrences are the curriculum; the markets were the material. Say it plainly, because students rarely see the structure while they are inside it." }
+      note: "This slide named the whole curriculum when spread betting was the last track. It now hands over to Automation instead — the summing-up proper lives in Module 806. Deliver the recurrences plainly; students rarely see the structure while they are inside it." }
   ],
 
   practical: {
     title: "The final section of your plan",
     time: "50 min",
-    intro: "The last lab of eight tracks. Complete the policy, do the tax arithmetic on your own numbers, and state where every market stands.",
+    intro: "The last lab before the automation track. Complete the policy, do the tax arithmetic on your own numbers, and state where every market stands.",
     setup: [
       "Bring the risk policy from Module 10 and all seven addenda.",
       "Bring your realistic expected trade count and average position size."
@@ -183,9 +184,9 @@ window.COURSE = (window.COURSE || []).concat([
         "How to trade every market actively",
         "Which market is most profitable"
       ], a: 1,
-      why: "The recurrences are the curriculum. Students rarely notice the structure while they are inside it, which is why the final module names it explicitly." },
+      why: "The recurrences are the curriculum. Students rarely notice the structure while they are inside it, which is why Module 806 names it explicitly at the close." },
 
-    { q: "Having completed all eight tracks, you are:",
+    { q: "Having completed eight of the nine tracks, you are:",
       options: [
         "Ready to trade eight markets",
         "Equipped to evaluate any of them, size properly, and walk away from most — which is the rarer and more useful skill",

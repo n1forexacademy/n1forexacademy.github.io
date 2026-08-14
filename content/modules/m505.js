@@ -5,8 +5,8 @@ window.COURSE = (window.COURSE || []).concat([
 {
   id: 505,
   track: 'crypto',
-  title: "Risk in an Unregulated Market, and Closing the Course",
-  tagline: "The last module of six tracks. One policy, extended a fifth time — and an honest answer about what all of this was for.",
+  title: "Risk in an Unregulated Market, and Six Tracks In",
+  tagline: "The last module of the crypto track, with six behind you. One policy, extended a fifth time — and an honest answer about what all of this is for.",
   level: "Digital Assets",
   duration: "95 min",
 
@@ -15,7 +15,7 @@ window.COURSE = (window.COURSE || []).concat([
     "Size crypto positions for volatility that is routinely several times what you have met",
     "Explain why position sizing alone is insufficient where the venue itself is a risk",
     "Decide honestly what role, if any, this market has in your process",
-    "State what the whole course did and did not equip you to do"
+    "State what six tracks did and did not equip you to do"
   ],
 
   misconceptions: [

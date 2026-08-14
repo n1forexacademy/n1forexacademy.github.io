@@ -2,9 +2,9 @@
 
    NOTE: this is currently the LAST module of the LAST track, so its final
    lesson closes the whole programme. If a track is ever added after this one,
-   narrow l806's closing section and move the summing-up — see the warning in
-   ARCHITECTURE.md §1 and the header of l505.js, which has already been through
-   exactly this once. */
+   narrow BOTH this module's closing slide AND l806's closing section, and move
+   the summing-up. This has already happened twice (l505/m505, l704/m704) — see
+   ARCHITECTURE.md §1. */
 window.COURSE = (window.COURSE || []).concat([
 
 /* ============================ MODULE 806 ============================ */

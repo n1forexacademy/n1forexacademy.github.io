@@ -266,7 +266,7 @@ window.TRACKS = [
       {
         id: 'cr-close',
         title: 'Risk and closing the course',
-        blurb: 'The final extension of your risk policy, and an honest account of what six tracks did and did not equip you to do.',
+        blurb: 'A fifth extension of your risk policy, and an honest account of what six tracks did and did not equip you to do.',
         steps: [
           { id: 'm505', type: 'module', ref: 505, pass: 85 },
           { id: 'g-final-plan', type: 'gate', title: 'Submit your complete cross-market plan',
@@ -358,13 +358,13 @@ window.TRACKS = [
       {
         id: 'sb-close',
         title: 'Protection, tax and the close',
-        blurb: 'The one genuine innovation in this wrapper, the tax position stated with its qualifications intact, and the end of all eight tracks.',
+        blurb: 'The one genuine innovation in this wrapper, the tax position stated with its qualifications intact, and eight markets behind you.',
         steps: [
           { id: 'm703', type: 'module', ref: 703, pass: 80 },
           { id: 'm704', type: 'module', ref: 704, pass: 85 },
           { id: 'd-sb-cost', type: 'drill', ref: 'sb-cost' },
           { id: 'g-final-crossmarket', type: 'gate', title: 'Submit your complete eight-market plan',
-            detail: 'The capstone from Lab 704 and the final gate of the whole course. Your instructor checks that the ' +
+            detail: 'The capstone from Lab 704 and the gate on the spread betting certificate. Your instructor checks that the ' +
                     'cost comparison uses the student’s own realistic trade count rather than a generic example, that ' +
                     'the tax section acknowledges losses are generally not relievable rather than treating treatment as ' +
                     'pure benefit, that the protection rule states explicitly that protection is added AFTER sizing, and ' +

@@ -4,8 +4,10 @@
    the entire programme — nine tracks — so the second half closes it.
 
    IF A TRACK IS EVER ADDED AFTER THIS ONE: narrow the closing section and move
-   the summing-up to the new last lesson. l505.js has already been through
-   exactly this once; its header records the same warning. */
+   the summing-up to the new last lesson. This has already happened TWICE —
+   l505.js when crypto was last, l704.js when spread betting was — and both
+   times the module deck (m704.js) was missed on the first pass. Narrow the
+   lesson AND its module together. */
 (function () {
   var L = (window.LESSONS = window.LESSONS || {});
 
