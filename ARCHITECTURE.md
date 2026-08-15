@@ -94,7 +94,8 @@ worker/                 OPTIONAL backend. Only needed for server mode (§7).
   src/index.js          Auth + progress + messaging API (Worker). §7.1.
   schema.sql            D1 tables: students, sessions, progress.
   migrations/           002 invites, 003 usernames, 004 messages,
-                        005 attachments. Apply in order.
+                        005 attachments, 006 deletion. Apply in order.
+                        006 is NOT re-runnable — see its header.
   test/run-tests.sh     43-assertion suite against the live Worker.
   wrangler.toml         Config. database_id and ALLOWED_ORIGINS go here.
 
@@ -884,6 +885,46 @@ Tested against the live Worker:
 Responses carry `X-Content-Type-Options: nosniff`, `Content-Security-Policy: default-src 'none';
 sandbox` and `Content-Disposition: attachment`, so even a hypothetical non-image that got past the
 sniffer would be inert.
+
+#### Removing a message or a picture
+
+Two controls: **Remove** on a message, and an **×** on an individual picture that leaves the message
+it belonged to. Both confirm first, because neither can be undone.
+
+**Who may remove what** is decided by `messageIfDeletable()`, which both endpoints share so they
+cannot drift apart:
+
+| | May remove |
+|---|---|
+| Student | Their own messages, in their own thread. Nothing else |
+| Instructor | Anything, in any thread |
+
+A student deliberately **cannot** remove something the instructor sent them — otherwise a student
+could quietly delete feedback they did not like. There is deliberately **no time limit** on a
+student unsending: the usual reason a screenshot has to go is that it showed an account balance or a
+real name, and that reason does not expire after five minutes.
+
+**Messages are tombstoned; attachment rows are deleted outright.** The message row keeps its place
+with `deleted_at` set and the body blanked, so the replies around it still read as replies to
+something. The pixels genuinely leave the database — "hidden but still stored" is not removed, and
+the person removing a picture of their own account balance needs it gone. Verified by querying D1
+directly after a deletion: **zero rows, zero bytes.**
+
+**Every read path is tombstone-aware.** A removed message stops counting toward unread badges, stops
+being marked read, and stops appearing as a thread preview. That is four separate queries in
+`worker/src/index.js`; a tombstone that only half-applies leaves a badge pointing at nothing.
+
+Tested against the live Worker:
+
+| Attempt | Result |
+|---|---|
+| Another student removes a message | **403** |
+| Student removes the instructor's message | **403** |
+| Another student removes just the picture | **403** |
+| Owner removes one picture of two | **200** — message and the other picture survive |
+| Serving the removed picture afterwards | **404** |
+| Instructor removes a student's message | **200**, shown as removed by the instructor |
+| Student unsends an unread message | instructor's unread drops 3 → 2 |
 
 ## 8. Verifying a change
 
