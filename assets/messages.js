@@ -158,14 +158,61 @@
         img.src = url;
         img.alt = 'Attached picture';
         img.loading = 'lazy';
-        holder.innerHTML = '';
-        holder.appendChild(img);
+
+        /* Remove ONLY the placeholder. Clearing innerHTML here would take the
+           remove button with it — and its click handler, which is attached
+           before this promise resolves. */
+        var wait = holder.querySelector('.msg-pic-wait');
+        if (wait) wait.remove();
+        holder.insertBefore(img, holder.firstChild);
+
         holder.onclick = function () { openLightbox(url); };
         holder.classList.add('ready');
       }).catch(function () {
-        holder.textContent = 'This picture could not be loaded.';
+        var wait2 = holder.querySelector('.msg-pic-wait');
+        if (wait2) wait2.textContent = 'This picture could not be loaded.';
         holder.classList.add('failed');
       });
+    });
+  }
+
+  /* Deletion is permanent — there is no recycle bin on the server — so both
+     controls confirm first, and both say what will actually go. */
+  function wireDeletes(root, reload) {
+    root.querySelectorAll('[data-delmsg]').forEach(function (b) {
+      b.onclick = async function () {
+        var hasPics = !!b.closest('.msg').querySelector('.msg-pic');
+        if (!window.confirm(hasPics
+          ? 'Remove this message and its picture? This cannot be undone.'
+          : 'Remove this message? This cannot be undone.')) return;
+        b.disabled = true;
+        try {
+          await Auth.call('/api/messages/delete', {
+            method: 'POST', body: { messageId: b.getAttribute('data-delmsg') }
+          });
+          await reload();
+        } catch (e) {
+          b.disabled = false;
+          window.alert((e && e.message) || 'That could not be removed.');
+        }
+      };
+    });
+
+    root.querySelectorAll('[data-delatt]').forEach(function (b) {
+      b.onclick = async function (ev) {
+        ev.stopPropagation();          // the picture itself opens the lightbox
+        if (!window.confirm('Remove this picture? The message stays. This cannot be undone.')) return;
+        b.disabled = true;
+        try {
+          await Auth.call('/api/attachment/delete', {
+            method: 'POST', body: { attachmentId: b.getAttribute('data-delatt') }
+          });
+          await reload();
+        } catch (e) {
+          b.disabled = false;
+          window.alert((e && e.message) || 'That picture could not be removed.');
+        }
+      };
     });
   }
 
@@ -239,18 +286,38 @@
     }
     return messages.map(function (m) {
       var mine = meIsInstructor ? m.sender === 'instructor' : m.sender === 'student';
+
+      /* A removed message keeps its place in the thread. Vanishing it entirely
+         would leave the replies around it answering nothing. */
+      if (m.deleted_at) {
+        var byWhom = m.deleted_by === 'instructor'
+          ? (meIsInstructor ? 'You removed this' : 'Removed by ' + instructorName())
+          : (mine || meIsInstructor ? (mine ? 'You removed this' : 'The student removed this') : 'Removed');
+        return '<div class="msg gone' + (mine ? ' mine' : '') + '">' +
+          '<div class="msg-meta"><span>' + esc(when(m.created_at)) + '</span></div>' +
+          '<div class="msg-body"><i>' + esc(byWhom) + '</i></div>' +
+        '</div>';
+      }
+
+      // An instructor may remove anything; a student only what they sent.
+      var canRemove = meIsInstructor || m.sender === 'student';
       var pics = (m.attachments || []).map(function (a) {
         /* The box is sized from the stored dimensions so the thread does not
            jump about as each picture arrives. */
         var ratio = (a.width && a.height) ? (a.height / a.width) : 0.6;
         return '<div class="msg-pic" data-att="' + esc(a.id) + '" ' +
           'style="padding-bottom:' + Math.min(140, Math.max(20, ratio * 100)).toFixed(1) + '%">' +
-          '<span class="msg-pic-wait">Loading picture…</span></div>';
+          '<span class="msg-pic-wait">Loading picture…</span>' +
+          (canRemove ? '<button type="button" class="msg-pic-x" data-delatt="' + esc(a.id) + '" ' +
+            'title="Remove this picture" aria-label="Remove this picture">×</button>' : '') +
+        '</div>';
       }).join('');
 
       return '<div class="msg' + (mine ? ' mine' : '') + '">' +
         '<div class="msg-meta"><b>' + esc(m.sender_name || (m.sender === 'instructor' ? instructorName() : 'Student')) +
-          '</b><span>' + esc(when(m.created_at)) + '</span></div>' +
+          '</b><span>' + esc(when(m.created_at)) + '</span>' +
+          (canRemove ? '<button type="button" class="msg-del" data-delmsg="' + esc(m.id) + '">Remove</button>' : '') +
+        '</div>' +
         (m.body ? '<div class="msg-body">' + bodyHtml(m.body) + '</div>' : '') +
         (pics ? '<div class="msg-pics">' + pics + '</div>' : '') +
       '</div>';
@@ -406,6 +473,7 @@
         var r = await Auth.call('/api/messages');
         app.querySelector('#msgThread').innerHTML = threadHtml(r.messages || [], false);
         loadImagesIn(app);
+        wireDeletes(app, load);
       } catch (e) {
         app.querySelector('#msgThread').innerHTML =
           '<p class="muted">Could not load your messages. ' + esc((e && e.message) || '') + '</p>';
@@ -476,6 +544,7 @@
           var r = await Auth.call('/api/messages?studentId=' + encodeURIComponent(sid));
           panel.querySelector('#msgThread').innerHTML = threadHtml(r.messages || [], true);
           loadImagesIn(panel);
+          wireDeletes(panel, load);
         } catch (e) {
           panel.querySelector('#msgThread').innerHTML =
             '<p class="muted">Could not load. ' + esc((e && e.message) || '') + '</p>';

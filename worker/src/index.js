@@ -573,7 +573,7 @@ async function listMessages(user, url, env, request) {
   }
 
   const { results } = await env.DB.prepare(
-    `SELECT id, sender, sender_name, body, created_at, read_at
+    `SELECT id, sender, sender_name, body, created_at, read_at, deleted_at, deleted_by
        FROM messages WHERE student_id = ? ORDER BY created_at ASC LIMIT 500`
   ).bind(threadId).all();
 
@@ -597,7 +597,8 @@ async function listMessages(user, url, env, request) {
      showing a message the person has plainly already seen. */
   const theirs = user.role === 'instructor' ? 'student' : 'instructor';
   await env.DB.prepare(
-    `UPDATE messages SET read_at = ? WHERE student_id = ? AND sender = ? AND read_at IS NULL`
+    `UPDATE messages SET read_at = ?
+      WHERE student_id = ? AND sender = ? AND read_at IS NULL AND deleted_at IS NULL`
   ).bind(Date.now(), threadId, theirs).run();
 
   return json({ messages: results || [], studentId: threadId }, 200, env, request);
@@ -722,12 +723,75 @@ async function serveAttachment(user, id, env, request) {
   });
 }
 
+/* ---------- deletion ----------
+
+   WHO MAY REMOVE WHAT, in one place because there are two endpoints and they
+   must not drift:
+
+     A student  — their own messages, in their own thread. Nothing else. They
+                  cannot remove something the instructor sent them, which would
+                  let a student quietly delete feedback they did not like.
+     Instructor — anything, in any thread. They are the authority here, and a
+                  student sending something that should not be on the platform
+                  is exactly the case this has to cover.
+
+   There is deliberately NO time limit on a student unsending. The usual reason
+   a screenshot has to go is that it showed an account balance or a real name,
+   and that reason does not expire after five minutes. */
+async function messageIfDeletable(user, messageId, env) {
+  const row = await env.DB.prepare(
+    'SELECT id, student_id, sender, deleted_at FROM messages WHERE id = ?'
+  ).bind(String(messageId || '')).first();
+  if (!row) return { status: 404, error: 'No such message.' };
+  if (threadIdFor(user, row.student_id) !== row.student_id) {
+    return { status: 403, error: 'Not yours.' };
+  }
+  if (user.role !== 'instructor' && row.sender !== 'student') {
+    return { status: 403, error: 'You can only remove your own messages.' };
+  }
+  return { row };
+}
+
+async function deleteMessage(user, request, env) {
+  const b = await request.json().catch(() => ({}));
+  const check = await messageIfDeletable(user, b.messageId, env);
+  if (check.error) return json({ error: check.error }, check.status, env, request);
+  const row = check.row;
+
+  /* Bytes first. If the tombstone write failed after this, the worst case is a
+     message that still reads as present but has lost its picture — which is
+     the harmless direction. The other order can leave orphaned pixels behind
+     for a message that claims to be gone. */
+  await env.DB.prepare('DELETE FROM attachments WHERE message_id = ?').bind(row.id).run();
+  await env.DB.prepare(
+    `UPDATE messages SET body = '', deleted_at = ?, deleted_by = ? WHERE id = ?`
+  ).bind(Date.now(), user.role === 'instructor' ? 'instructor' : 'student', row.id).run();
+
+  return json({ ok: true, messageId: row.id }, 200, env, request);
+}
+
+/* Remove one picture and leave the message that carried it. */
+async function deleteAttachment(user, request, env) {
+  const b = await request.json().catch(() => ({}));
+  const att = await env.DB.prepare(
+    'SELECT id, message_id FROM attachments WHERE id = ?'
+  ).bind(String(b.attachmentId || '')).first();
+  if (!att) return json({ error: 'No such picture.' }, 404, env, request);
+
+  const check = await messageIfDeletable(user, att.message_id, env);
+  if (check.error) return json({ error: check.error }, check.status, env, request);
+
+  await env.DB.prepare('DELETE FROM attachments WHERE id = ?').bind(att.id).run();
+  return json({ ok: true, attachmentId: att.id }, 200, env, request);
+}
+
 /* How many messages are waiting for whoever is asking. Cheap enough to poll. */
 async function unreadCount(user, env, request) {
   if (user.role === 'instructor') {
     const { results } = await env.DB.prepare(
       `SELECT student_id, COUNT(*) AS n FROM messages
-        WHERE sender = 'student' AND read_at IS NULL GROUP BY student_id`
+        WHERE sender = 'student' AND read_at IS NULL AND deleted_at IS NULL
+        GROUP BY student_id`
     ).all();
     const byStudent = {};
     let total = 0;
@@ -736,7 +800,7 @@ async function unreadCount(user, env, request) {
   }
   const row = await env.DB.prepare(
     `SELECT COUNT(*) AS n FROM messages
-      WHERE student_id = ? AND sender = 'instructor' AND read_at IS NULL`
+      WHERE student_id = ? AND sender = 'instructor' AND read_at IS NULL AND deleted_at IS NULL`
   ).bind(user.id).first();
   return json({ unread: (row && row.n) || 0 }, 200, env, request);
 }
@@ -746,10 +810,10 @@ async function unreadCount(user, env, request) {
 async function listThreads(env, request) {
   const { results } = await env.DB.prepare(
     `SELECT st.id, st.name, st.username,
-            (SELECT body       FROM messages m WHERE m.student_id = st.id ORDER BY m.created_at DESC LIMIT 1) AS last_body,
-            (SELECT sender     FROM messages m WHERE m.student_id = st.id ORDER BY m.created_at DESC LIMIT 1) AS last_sender,
-            (SELECT created_at FROM messages m WHERE m.student_id = st.id ORDER BY m.created_at DESC LIMIT 1) AS last_at,
-            (SELECT COUNT(*)   FROM messages m WHERE m.student_id = st.id AND m.sender = 'student' AND m.read_at IS NULL) AS unread
+            (SELECT body       FROM messages m WHERE m.student_id = st.id AND m.deleted_at IS NULL ORDER BY m.created_at DESC LIMIT 1) AS last_body,
+            (SELECT sender     FROM messages m WHERE m.student_id = st.id AND m.deleted_at IS NULL ORDER BY m.created_at DESC LIMIT 1) AS last_sender,
+            (SELECT created_at FROM messages m WHERE m.student_id = st.id AND m.deleted_at IS NULL ORDER BY m.created_at DESC LIMIT 1) AS last_at,
+            (SELECT COUNT(*)   FROM messages m WHERE m.student_id = st.id AND m.sender = 'student' AND m.read_at IS NULL AND m.deleted_at IS NULL) AS unread
        FROM students st
       WHERE st.role != 'instructor' AND st.active = 1
       ORDER BY unread DESC, last_at DESC, st.name`
@@ -810,6 +874,8 @@ export default {
       if (path === '/api/messages' && request.method === 'GET') return listMessages(user, url, env, request);
       if (path === '/api/messages' && request.method === 'POST') return sendMessage(user, request, env);
       if (path === '/api/messages/unread' && request.method === 'GET') return unreadCount(user, env, request);
+      if (path === '/api/messages/delete' && request.method === 'POST') return deleteMessage(user, request, env);
+      if (path === '/api/attachment/delete' && request.method === 'POST') return deleteAttachment(user, request, env);
       if (path.startsWith('/api/attachment/') && request.method === 'GET') {
         return serveAttachment(user, decodeURIComponent(path.slice('/api/attachment/'.length)), env, request);
       }

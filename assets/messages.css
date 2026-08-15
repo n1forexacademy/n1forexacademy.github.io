@@ -212,3 +212,55 @@
 
 .msg-attach { flex: 0 0 auto; cursor: pointer; padding: .3rem .7rem; font-size: .82rem; }
 .msg-compose.drop { outline: 2px dashed var(--accent); outline-offset: -4px; }
+
+/* ---- removing a message or a picture ---- */
+
+/* Kept quiet until the message is hovered or the button is focused: a Remove
+   control on every message shouts, and it must never be easier to hit than the
+   message itself. Focus-visible keeps it reachable by keyboard. */
+.msg-del {
+  margin-left: auto;
+  padding: 0 .3rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: .72rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .12s;
+}
+.msg:hover .msg-del,
+.msg-del:focus-visible { opacity: 1; }
+.msg-del:hover { color: var(--danger, #b23b3b); text-decoration: underline; }
+.msg-del[disabled] { opacity: .5; cursor: default; }
+
+.msg-pic-x {
+  position: absolute; top: .3rem; right: .3rem; z-index: 2;
+  width: 1.5rem; height: 1.5rem;
+  border: 0; border-radius: 50%;
+  background: rgba(0, 0, 0, .6);
+  color: #fff;
+  font-size: 1rem; line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  transition: opacity .12s;
+}
+.msg-pic:hover .msg-pic-x,
+.msg-pic-x:focus-visible { opacity: 1; }
+.msg-pic-x:hover { background: var(--danger, #b23b3b); }
+
+/* A removed message keeps its slot so the thread still reads in order. */
+.msg.gone {
+  border-style: dashed;
+  background: transparent;
+  opacity: .7;
+}
+.msg.gone .msg-body { color: var(--muted); font-size: .82rem; }
+
+/* Touch has no hover, so the controls have to be permanently visible there. */
+@media (hover: none) {
+  .msg-del, .msg-pic-x { opacity: 1; }
+}
